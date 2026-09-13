@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salon AI - المنصة الذكية لحجز صالونات التجميل</title>
+    <!-- تضمين مكتبة Leaflet CSS للخرائط -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- ملف التصميم الخارجي -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- الشريط العلوي -->
+    <header>
+        <div class="logo">Salon AI 💇‍♀️✨</div>
+        <nav>
+            <a href="#home">الرئيسية</a>
+            <a href="#map-section">استكشف الصالونات</a>
+            <a href="#booking">حجز موعد ذكي</a>
+        </nav>
+    </header>
+
+    <!-- القسم الرئيسي -->
+    <section class="hero" id="home">
+        <h1>اكتشف أقرب صالونات التجميل واجز موعدك بالذكاء الاصطناعي</h1>
+        <p>ابحث عن أفضل الصالونات عبر الخريطة التفاعلية واحجز خدماتك المفضلة بكل سهولة.</p>
+    </section>
+
+    <!-- قسم الخريطة التفاعلية -->
+    <section class="container" id="map-section">
+        <h2>خريطة الصالونات المتاحة</h2>
+        <div id="map"></div>
+    </section>
+
+    <!-- قسم الحجز السريع -->
+    <section class="container" id="booking">
+        <h2>حجز موعد جديد</h2>
+        <form id="booking-form">
+            <div class="form-group">
+                <label for="salon-name">اختر الصالون:</label>
+                <select id="salon-name" required>
+                    <option value="">-- اختر صالوناً --</option>
+                    <option value="الفرع الرئيسي - المنامة">صالون الذكاء الاصطناعي (الفرع الرئيسي)</option>
+                    <option value="فرع السيف">صالون اللمسة الأنيقة (فرع السيف)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="service-type">نوع الخدمة:</label>
+                <select id="service-type" required>
+                    <option value="">-- اختر الخدمة --</option>
+                    <option value="قص شعر وتصفيف">قص شعر وتصفيف</option>
+                    <option value="عناية بالبشرة">عناية بالبشرة</option>
+                    <option value="مكياج وتجميل">مكياج وتجميل</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="booking-date">التاريخ والوقت:</label>
+                <input type="datetime-local" id="booking-date" required>
+            </div>
+            <button type="submit" class="btn-submit">تأكيد الحجز الذكي</button>
+        </form>
+        <div id="success-message" style="display:none; color: green; margin-top: 15px; font-weight: bold;"></div>
+    </section>
+
+    <!-- تضمين مكتبة Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- ملف الجافاسكريبت الخارجي -->
+    <script src="script.js"></script>
+</body>
+</html>
