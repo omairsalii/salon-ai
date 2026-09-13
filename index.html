@@ -18,6 +18,7 @@
             <a href="#home">الرئيسية</a>
             <a href="#map-section">استكشف الصالونات</a>
             <a href="#booking">حجز موعد ذكي</a>
+            <a href="#my-bookings-section">حجوزاتي</a>
         </nav>
     </header>
 
@@ -27,9 +28,14 @@
         <p>ابحث عن أفضل الصالونات عبر الخريطة التفاعلية واحجز خدماتك المفضلة بكل سهولة.</p>
     </section>
 
-    <!-- قسم الخريطة التفاعلية -->
+    <!-- قسم الخريطة التفاعلية وتحديد الموقع -->
     <section class="container" id="map-section">
         <h2>خريطة الصالونات المتاحة</h2>
+        <div style="margin-bottom: 10px;">
+            <button id="locate-btn" style="background-color: #7c4dff; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                📍 تحديد موقعي الحالي على الخريطة
+            </button>
+        </div>
         <div id="map"></div>
     </section>
 
@@ -62,6 +68,20 @@
         </form>
         <div id="success-message" style="display:none; color: green; margin-top: 15px; font-weight: bold;"></div>
     </section>
+
+    <!-- قسم نصائح العناية العامة (بدون انتهاك للخصوصية) -->
+    <div class="container" id="ai-recommendation-section" style="margin-top: 20px; background: linear-gradient(135deg, #f3e5f5, #e8eaf6);">
+        <h2>💡 نصائح الخبراء والعناية العامة</h2>
+        <p id="ai-suggestion-text" style="color: #555; font-size: 1.05rem;">اختر نوع الخدمة في نموذج الحجز بالأعلى للاطلاع على نصائح العناية العامة المرتبطة بها.</p>
+    </div>
+
+    <!-- قسم الحجوزات السابقة المحفوظة محلياً (LocalStorage) -->
+    <div class="container" id="my-bookings-section" style="margin-top: 20px;">
+        <h2>حجوزاتي السابقة</h2>
+        <ul id="bookings-list" style="list-style-type: none; padding: 0;">
+            <!-- سيتم تعبئة الحجوزات هنا برمجياً -->
+        </ul>
+    </div>
 
     <!-- تضمين مكتبة Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
