@@ -16,7 +16,6 @@ salon2.bindPopup("<b>صالون اللمسة الأنيقة (فرع السيف)<
 
 // ميزة تحديد موقع المستخدم الجغرافي (Geolocation)
 const locateBtn = document.getElementById('locate-btn');
-
 locateBtn.addEventListener('click', function() {
     if (!navigator.geolocation) {
         alert('متصفحك لا يدعم خاصية تحديد الموقع الجغرافي.');
@@ -31,7 +30,6 @@ locateBtn.addEventListener('click', function() {
             const lng = position.coords.longitude;
 
             map.setView([lat, lng], 15);
-
             const userMarker = L.marker([lat, lng]).addTo(map);
             userMarker.bindPopup("<b>📍 أنت هنا</b><br>موقعك الحالي.").openPopup();
 
@@ -53,7 +51,13 @@ const serviceSelect = document.getElementById('service-type');
 const bookingDateInput = document.getElementById('booking-date');
 const aiSuggestionText = document.getElementById('ai-suggestion-text');
 
-// ضبط الحد الأدنى لتاريخ الحجز ليكون ابتداءً من اللحظة الحالية لمنع التواريخ الماضية
+// عناصر بطاقة معلومات الصالون
+const salonProfileCard = document.getElementById('salon-profile-card');
+const displaySalonLogo = document.getElementById('display-salon-logo');
+const displaySalonName = document.getElementById('display-salon-name');
+const displaySalonDetails = document.getElementById('display-salon-details');
+
+// ضبط الحد الأدنى لتاريخ الحجز لمنع التواريخ الماضية
 function setMinDateTime() {
     const now = new Date();
     const year = now.getFullYear();
@@ -65,31 +69,15 @@ function setMinDateTime() {
     const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
     bookingDateInput.min = minDateTime;
 }
-
-// تنفيذ دالة تعيين أقل تاريخ عند فتح الصفحة
 setMinDateTime();
 
-// متغير لتتبع ما إذا كنا نقوم بتعديل حجز حالي
 let editingIndex = null;
 
-// قاعدة بيانات آمنة للنصائح العامة والخبراء لكل الخدمات الشاملة
+// قاعدة بيانات آمنة للنصائح العامة والخبراء
 const generalTips = {
     "قص شعر وتصفيف": "💡 نصيحة عامة: يُنصح بغسل الشعر قبل موعد القص بـ 24 ساعة ليكون في أفضل حالة للتصفيف.",
     "صبغة الشعر وتلوينه": "💡 نصيحة عامة: يفضل عدم غسل الشعر بالماء الساخن لمدة 48 ساعة بعد الصبغة للحفاظ على ثبات اللون.",
-    "علاج الشعر وفرد الكيراتين": "💡 نصيحة عامة: استخدمي أنواع شامبو خالية من الكبريت (Sulfat-free) لضمان استمرارية نتائج علاج الشعر.",
-    "تسريحات المناسبات": "💡 نصيحة عامة: يفضل ارتداء ملابس بأزرار أمامية لتجنب إفساد التسريحة أثناء تبديل الملابس.",
-    
-    "تنظيف بشرة عميق": "💡 نصيحة عامة: يفضل تجنب التعرض المباشر لأشعة الشمس الحارقة أو وضع المكياج الثقيل لمدة 24 ساعة بعد جلسة التنظيف.",
-    "علاج النضارة والترطيب": "💡 نصيحة عامة: شرب كميات وفيرة من الماء بعد جلسات ترطيب البشرة يعزز من إشراقتها ونتائجها.",
-    "جلسات العناية بمنطقة العيون": "💡 نصيحة عامة: احرصي على الحصول على قسط كافٍ من النوم لتعزيز نتائج استرخاء وحيوية منطقة العين.",
-
-    "بدكير ومنيكير": "💡 نصيحة عامة: ترطيب اليدين والقدمين باستمرار يحافظ على نعومة الجلد لفترة أطول بعد الجلسة.",
-    "تركيب وتزيين الأظافر": "💡 نصيحة عامة: تجنبي استخدام الأظافر كأدوات لفتح العبوات للحفاظ على ثباتها وعدم تعرضها للكسر.",
-    "عناية وترطيب اليدين والقدمين": "💡 نصيحة عامة: استخدام القفازات القطنية ليلاً بعد تطبيق المرطب يعطي نتائج مذهلة في النعومة.",
-
-    "مكياج سهرات ومناسبات": "💡 نصيحة عامة: الترطيب الخفيف للبشرة قبل موعد المكياج يمنحك مظهراً متألقاً وثباتاً طوال السهرة.",
-    "مكياج عرائس": "💡 نصيحة عامة: ننصح بعمل جلسة بروفة مسبقة لتحديد الألوان والستايل الأنسب للمناسبة الكبرى.",
-    "تنسيق وتخطيط الحواجب والرموش": "💡 نصيحة عامة: تجنبي فرك العينين بقوة أو تعريضهما للبخار المباشر خلال الـ 24 ساعة الأولى."
+    "تنظيف بشرة عميق": "💡 نصيحة عامة: يفضل تجنب التعرض المباشر لأشعة الشمس الحارقة أو وضع المكياج الثقيل لمدة 24 ساعة بعد جلسة التنظيف."
 };
 
 // الاستماع لتغيير نوع الخدمة لعرض النصيحة العامة الآمنة
@@ -106,7 +94,41 @@ serviceSelect.addEventListener('change', function() {
     }
 });
 
-// دالة لعرض الحجوزات المحفوظة مع أزرار التعديل والحذف
+// تحديث الخدمات وبطاقة الهوية ديناميكياً حسب الصالون المختار
+function updateSalonProfileAndServices() {
+    const selectedSalon = salonSelect.value;
+    serviceSelect.innerHTML = '<option value="">-- اختر الخدمة المطلوبة --</option>';
+
+    if (!selectedSalon) {
+        salonProfileCard.style.display = 'none';
+        return;
+    }
+
+    const salonsData = JSON.parse(localStorage.getItem('salons_custom_data')) || {};
+    const salonInfo = salonsData[selectedSalon];
+
+    if (salonInfo) {
+        salonProfileCard.style.display = 'flex';
+        displaySalonLogo.src = salonInfo.logo || 'https://via.placeholder.com/50';
+        displaySalonName.textContent = selectedSalon;
+        displaySalonDetails.innerHTML = `هاتف: ${salonInfo.phone || 'غير متوفر'} | السجل التجاري (CR): ${salonInfo.cr || 'غير متوفر'}`;
+        
+        if (salonInfo.services && salonInfo.services.length > 0) {
+            salonInfo.services.forEach(srv => {
+                const option = document.createElement('option');
+                option.value = srv.name;
+                option.textContent = `${srv.name} (${srv.price})`;
+                serviceSelect.appendChild(option);
+            });
+        }
+    } else {
+        salonProfileCard.style.display = 'none';
+    }
+}
+
+salonSelect.addEventListener('change', updateSalonProfileAndServices);
+
+// دالة لعرض الحجوزات المحفوظة
 function loadBookings() {
     bookingsList.innerHTML = '';
     const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
@@ -118,7 +140,7 @@ function loadBookings() {
 
     savedBookings.forEach((booking, index) => {
         const li = document.createElement('li');
-        li.style.cssText = "background: #f9f9f9; margin-bottom: 10px; padding: 10px; border-radius: 6px; border-right: 4px solid #ff4081; display: flex; justify-content: space-between; align-items: center;";
+        li.style.cssText = "background: #f9f9f9; margin-bottom: 10px; padding: 10px; border-radius: 6px; border-right: 4px solid #ff4081; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;";
         
         const bookingInfo = document.createElement('div');
         bookingInfo.innerHTML = `<strong>الحجز #${index + 1}:</strong> ${booking.salon} - ${booking.service} <br><small style="color: #666;">الموعد: ${booking.date}</small>`;
@@ -130,46 +152,34 @@ function loadBookings() {
         const editBtn = document.createElement('button');
         editBtn.textContent = 'تعديل';
         editBtn.style.cssText = "background-color: #7c4dff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;";
-        editBtn.addEventListener('click', function() {
-            editBooking(index);
-        });
+        editBtn.addEventListener('click', () => editBooking(index));
 
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = 'إلغاء';
         deleteBtn.style.cssText = "background-color: #ff5252; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;";
-        deleteBtn.addEventListener('click', function() {
-            removeBooking(index);
-        });
+        deleteBtn.addEventListener('click', () => removeBooking(index));
 
         actionsDiv.appendChild(editBtn);
         actionsDiv.appendChild(deleteBtn);
-
         li.appendChild(bookingInfo);
         li.appendChild(actionsDiv);
         bookingsList.appendChild(li);
     });
 }
 
-// دالة لتعبئة النموذج ببيانات الحجز المراد تعديله
 function editBooking(index) {
     const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
     const booking = savedBookings[index];
 
     salonSelect.value = booking.salon;
+    updateSalonProfileAndServices();
     serviceSelect.value = booking.service;
     bookingDateInput.value = booking.date;
 
     editingIndex = index;
     window.location.hash = '#booking';
-    
-    if (generalTips[booking.service]) {
-        aiSuggestionText.textContent = generalTips[booking.service];
-        aiSuggestionText.style.color = "#7c4dff";
-        aiSuggestionText.style.fontWeight = "bold";
-    }
 }
 
-// دالة لحذف حجز معين من الذاكرة المحلية وتحديث القائمة
 function removeBooking(index) {
     let savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
     savedBookings.splice(index, 1);
@@ -180,22 +190,18 @@ function removeBooking(index) {
         bookingForm.reset();
         setMinDateTime();
     }
-    
     loadBookings();
 }
 
-// تنفيذ دالة التحميل عند بدء تشغيل الصفحة
 loadBookings();
 
-// الاستماع لعملية إرسال نموذج الحجز مع التحقق من صحة التاريخ
+// الاستماع لعملية إرسال نموذج الحجز
 bookingForm.addEventListener('submit', function(e) {
     e.preventDefault(); 
-
     const salon = salonSelect.value;
     const service = serviceSelect.value;
     const date = bookingDateInput.value;
 
-    // التحقق الإضافي لرفض أي تواريخ سابقة
     const nowIsoString = new Date().toISOString().slice(0, 16);
     if (date < nowIsoString) {
         alert('عذراً، لا يمكن حجز موعد في تاريخ أو وقت مضى.');
@@ -210,20 +216,17 @@ bookingForm.addEventListener('submit', function(e) {
             successMessage.textContent = `تم تحديث حجزك بنجاح ✨`;
             editingIndex = null;
         } else {
-            const newBooking = { salon, service, date };
-            savedBookings.push(newBooking);
+            savedBookings.push({ salon, service, date });
             successMessage.textContent = `تم تسجيل حجزك بنجاح وحفظه في الذاكرة المحلية ✨`;
         }
         
         localStorage.setItem('salon_bookings', JSON.stringify(savedBookings));
-
         successMessage.style.display = 'block';
         
         loadBookings();
         bookingForm.reset();
-        setMinDateTime(); // إعادة ضبط أقل تاريخ متاح
+        setMinDateTime();
+        salonProfileCard.style.display = 'none';
         aiSuggestionText.textContent = "اختر نوع الخدمة في نموذج الحجز بالأعلى للاطلاع على نصائح العناية العامة المرتبطة بها.";
-        aiSuggestionText.style.color = "#555";
-        aiSuggestionText.style.fontWeight = "normal";
     }
 });

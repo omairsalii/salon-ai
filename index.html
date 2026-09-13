@@ -18,6 +18,7 @@
             <a href="#home">الرئيسية</a>
             <a href="#map-section">استكشف الصالونات</a>
             <a href="#booking">حجز موعد ذكي</a>
+            <a href="#ai-recommendation-section">نصائح الخبراء</a>
             <a href="#my-bookings-section">حجوزاتي</a>
         </nav>
     </header>
@@ -25,23 +26,23 @@
     <!-- القسم الرئيسي -->
     <section class="hero" id="home">
         <h1>اكتشف أقرب صالونات التجميل واجز موعدك بالذكاء الاصطناعي</h1>
-        <p>ابحث عن أفضل الصالونات عبر الخريطة التفاعلية واحجز خدماتك المفضلة بكل سهولة.</p>
+        <p>منصة متكاملة تمنحك تجربة حجز سلسة، دقيقة، وآمنة لخدمات العناية والتجميل.</p>
     </section>
 
     <!-- قسم الخريطة التفاعلية وتحديد الموقع -->
     <section class="container" id="map-section">
         <h2>خريطة الصالونات المتاحة</h2>
         <div style="margin-bottom: 10px;">
-            <button id="locate-btn" style="background-color: #7c4dff; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+            <button id="locate-btn" class="btn-secondary">
                 📍 تحديد موقعي الحالي على الخريطة
             </button>
         </div>
         <div id="map"></div>
     </section>
 
-    <!-- قسم الحجز السريع -->
+    <!-- قسم الحجز الشامل -->
     <section class="container" id="booking">
-        <h2>حجز موعد جديد</h2>
+        <h2>حجز موعد جديد أو تحديث موعد</h2>
         <form id="booking-form">
             <div class="form-group">
                 <label for="salon-name">اختر الصالون:</label>
@@ -51,59 +52,52 @@
                     <option value="فرع السيف">صالون اللمسة الأنيقة (فرع السيف)</option>
                 </select>
             </div>
+
+            <!-- بطاقة معلومات الصالون المختارة (الشعار، الهاتف، السجل التجاري) -->
+            <div id="salon-profile-card" style="display: none; background: #fafafa; border: 1px solid #ddd; padding: 12px; border-radius: 6px; margin-bottom: 1rem; align-items: center; gap: 15px;">
+                <img id="display-salon-logo" src="" alt="شعار الصالون" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc;">
+                <div>
+                    <h4 id="display-salon-name" style="margin: 0 0 5px 0; color: #333;"></h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #666;" id="display-salon-details"></p>
+                </div>
+            </div>
+
             <div class="form-group">
-                <label for="service-type">نوع الخدمة:</label>
+                <label for="service-type">نوع الخدمة الشاملة (تتغير ديناميكياً حسب الصالون):</label>
                 <select id="service-type" required>
-                    <option value="">-- اختر الخدمة المطلوبة --</option>
-                    
-                    <optgroup label="خدمات الشعر">
-                        <option value="قص شعر وتصفيف">قص شعر وتصفيف</option>
-                        <option value="صبغة الشعر وتلوينه">صبغة الشعر وتلوينه</option>
-                        <option value="علاج الشعر وفرد الكيراتين">علاج الشعر وفرد الكيراتين</option>
-                        <option value="تسريحات المناسبات">تسريحات المناسبات</option>
-                    </optgroup>
-            
-                    <optgroup label="العناية بالبشرة والوجه">
-                        <option value="تنظيف بشرة عميق">تنظيف بشرة عميق</option>
-                        <option value="علاج النضارة والترطيب">علاج النضارة والترطيب</option>
-                        <option value="جلسات العناية بمنطقة العيون">جلسات العناية بمنطقة العيون</option>
-                    </optgroup>
-            
-                    <optgroup label="العناية بالأظافر واليدين والقدمين">
-                        <option value="بدكير ومنيكير">بدكير ومنيكير</option>
-                        <option value="تركيب وتزيين الأظافر">تركيب وتزيين الأظافر</option>
-                        <option value="عناية وترطيب اليدين والقدمين">عناية وترطيب اليدين والقدمين</option>
-                    </optgroup>
-            
-                    <optgroup label="التجميل والمكياج">
-                        <option value="مكياج سهرات ومناسبات">مكياج سهرات ومناسبات</option>
-                        <option value="مكياج عرائس">مكياج عرائس</option>
-                        <option value="تنسيق وتخطيط الحواجب والرموش">تنسيق وتخطيط الحواجب والرموش</option>
-                    </optgroup>
+                    <option value="">-- اختر الصالون أولاً --</option>
                 </select>
             </div>
+
             <div class="form-group">
                 <label for="booking-date">التاريخ والوقت:</label>
                 <input type="datetime-local" id="booking-date" required>
             </div>
-            <button type="submit" class="btn-submit">تأكيد الحجز الذكي</button>
+            
+            <button type="submit" class="btn-submit">تأكيد وحفظ الحجز</button>
         </form>
-        <div id="success-message" style="display:none; color: green; margin-top: 15px; font-weight: bold;"></div>
+        <div id="success-message" style="display:none; color: #2e7d32; margin-top: 15px; font-weight: bold;"></div>
     </section>
 
-    <!-- قسم نصائح العناية العامة (بدون انتهاك للخصوصية) -->
-    <div class="container" id="ai-recommendation-section" style="margin-top: 20px; background: linear-gradient(135deg, #f3e5f5, #e8eaf6);">
+    <!-- قسم نصائح الخبراء والعناية العامة -->
+    <div class="container" id="ai-recommendation-section" style="background: linear-gradient(135deg, #f3e5f5, #e8eaf6);">
         <h2>💡 نصائح الخبراء والعناية العامة</h2>
         <p id="ai-suggestion-text" style="color: #555; font-size: 1.05rem;">اختر نوع الخدمة في نموذج الحجز بالأعلى للاطلاع على نصائح العناية العامة المرتبطة بها.</p>
     </div>
 
-    <!-- قسم الحجوزات السابقة المحفوظة محلياً (LocalStorage) -->
-    <div class="container" id="my-bookings-section" style="margin-top: 20px;">
-        <h2>حجوزاتي السابقة</h2>
+    <!-- قسم الحجوزات السابقة وإدارتها -->
+    <div class="container" id="my-bookings-section">
+        <h2>حجوزاتي السابقة وإدارتها</h2>
         <ul id="bookings-list" style="list-style-type: none; padding: 0;">
             <!-- سيتم تعبئة الحجوزات هنا برمجياً -->
         </ul>
     </div>
+
+    <!-- تذييل الصفحة مع رابط سري لدخول أصحاب الصالونات -->
+    <footer style="text-align: center; padding: 2rem; background: #1a1a1a; color: #aaa; margin-top: 3rem;">
+        <p>جميع الحقوق محفوظة لمنصة Salon AI © 2026</p>
+        <p><a href="dashboard.html" style="color: #7c4dff; text-decoration: none; font-size: 0.9rem;">🔐 دخول أصحاب الصالونات (إدارة النظام)</a></p>
+    </footer>
 
     <!-- تضمين مكتبة Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
