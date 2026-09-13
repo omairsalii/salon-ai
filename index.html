@@ -17,38 +17,87 @@
         <nav>
             <a href="#home">الرئيسية</a>
             <a href="#map-section">استكشف الصالونات</a>
-            <a href="#booking">حجز موعد ذكي</a>
-            <a href="#ai-recommendation-section">نصائح الخبراء</a>
-            <a href="#my-bookings-section">حجوزاتي</a>
+            <a href="#booking">حجز موعد</a>
+            <a href="#client-portal" id="nav-client-portal" style="color: #7c4dff; font-weight: bold;">حسابي وولائي 👑</a>
+            <a href="dashboard.html">إدارة الصالونات (B2B)</a>
         </nav>
     </header>
 
     <!-- القسم الرئيسي -->
     <section class="hero" id="home">
         <h1>اكتشف أقرب صالونات التجميل واجز موعدك بالذكاء الاصطناعي</h1>
-        <p>منصة متكاملة تمنحك تجربة حجز سلسة، دقيقة، وآمنة لخدمات العناية والتجميل.</p>
+        <p>سجل معنا واحصل على نقاط الولاء، تتبع سجل معاملاتك، واستمتع بعروض حصرية من أفضل الصالونات.</p>
+    </section>
+
+    <!-- قسم تسجيل العملاء / الدخول السريع (جديد) -->
+    <section class="container" id="client-portal" style="background: #f7f9fc; border: 2px dashed #7c4dff;">
+        <h2>🔐 بوابة العملاء الولاء والتسجيل السريع</h2>
+        <div id="auth-container">
+            <!-- سيتم التحكم بعرض نموذج التسجيل أو لوحة العميل برمجياً -->
+            <div id="client-auth-box">
+                <p style="color: #555; margin-bottom: 1rem;">سجل بياناتك مرة واحدة (الاسم، الهاتف، البريد، الجنسية) لتستفيد من حفظ النقاط وتاريخ المعاملات والعروض.</p>
+                <form id="client-register-form">
+                    <div class="form-group">
+                        <label>الاسم الكامل:</label>
+                        <input type="text" id="reg-name" required placeholder="مثال: فاطمة محمد">
+                    </div>
+                    <div class="form-group">
+                        <label>رقم الهاتف:</label>
+                        <input type="tel" id="reg-phone" required placeholder="مثال: +973 39000000">
+                    </div>
+                    <div class="form-group">
+                        <label>البريد الإلكتروني:</label>
+                        <input type="email" id="reg-email" required placeholder="name@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>الجنسية:</label>
+                        <input type="text" id="reg-nationality" required placeholder="مثال: بحرينية">
+                    </div>
+                    <button type="submit" class="btn-submit">تسجيل حساب سريع واستلام بيانات الدخول 🚀</button>
+                </form>
+                <div id="reg-success" style="display:none; color: #2e7d32; margin-top: 10px; font-weight: bold;"></div>
+            </div>
+
+            <!-- لوحة الملف الشخصي للعميل المسجل (تظهر بعد الدخول) -->
+            <div id="client-dashboard-box" style="display: none;">
+                <div style="background: white; padding: 15px; border-radius: 8px; border-right: 4px solid #7c4dff;">
+                    <h3 id="welcome-client-title" style="margin-top: 0; color: #333;">أهلاً بك، </h3>
+                    <p style="margin: 5px 0; color: #666;" id="client-info-details"></p>
+                    <div style="display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
+                        <span style="background: #e8f5e9; color: #2e7d32; padding: 5px 10px; border-radius: 4px; font-weight: bold;" id="client-points-badge">⭐ رصيد النقاط: 0 نقطة</span>
+                        <span style="background: #e3f2fd; color: #1565c0; padding: 5px 10px; border-radius: 4px; font-weight: bold;" id="client-spent-badge">💳 إجمالي المعاملات: 0 BHD</span>
+                    </div>
+                    <button id="client-logout-btn" style="margin-top: 15px; background: #ff5252; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">تسجيل الخروج</button>
+                </div>
+            </div>
+        </div>
     </section>
 
     <!-- قسم الخريطة التفاعلية وتحديد الموقع -->
     <section class="container" id="map-section">
         <h2>خريطة الصالونات المتاحة</h2>
         <div style="margin-bottom: 10px;">
-            <button id="locate-btn" class="btn-secondary">
-                📍 تحديد موقعي الحالي على الخريطة
-            </button>
+            <button id="locate-btn" class="btn-secondary">📍 تحديد موقعي الحالي على الخريطة</button>
         </div>
         <div id="map"></div>
     </section>
 
     <!-- قسم الحجز الشامل -->
     <section class="container" id="booking">
-        <h2>حجز موعد جديد أو تحديث موعد</h2>
+        <h2>حجز موعد جديد</h2>
+        <div id="booking-notice" style="background: #fff8e1; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem; border-right: 4px solid #ffa000;">
+            💡 <strong>تنويه:</strong> التسجيل يتيح لك جمع النقاط وحفظ تاريخ المعاملات واستلام العروض. (يمكنك الحجز مباشرة أيضاً).
+        </div>
+        
         <form id="booking-form">
-            
-            <!-- حقل اسم العميل (مهم جداً لارتباطه بنظام VIP CRM في لوحة التحكم) -->
             <div class="form-group">
-                <label for="client-name">اسمك الكريم:</label>
+                <label for="client-name">اسم العميل (أو يتم تعبئته تلقائياً عند تسجيل الدخول):</label>
                 <input type="text" id="client-name" required placeholder="مثال: فاطمة محمد">
+            </div>
+
+            <div class="form-group">
+                <label for="client-phone-input">رقم الهاتف للتواصل:</label>
+                <input type="tel" id="client-phone-input" required placeholder="رقم الهاتف">
             </div>
 
             <div class="form-group">
@@ -60,7 +109,6 @@
                 </select>
             </div>
 
-            <!-- بطاقة معلومات الصالون المختارة (الشعار، الهاتف، السجل التجاري) -->
             <div id="salon-profile-card" style="display: none; background: #fafafa; border: 1px solid #ddd; padding: 12px; border-radius: 6px; margin-bottom: 1rem; align-items: center; gap: 15px;">
                 <img id="display-salon-logo" src="" alt="شعار الصالون" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc;">
                 <div>
@@ -70,7 +118,7 @@
             </div>
 
             <div class="form-group">
-                <label for="service-type">نوع الخدمة الشاملة (تتغير ديناميكياً حسب الصالون):</label>
+                <label for="service-type">نوع الخدمة المطلوبة:</label>
                 <select id="service-type" required>
                     <option value="">-- اختر الصالون أولاً --</option>
                 </select>
@@ -81,34 +129,32 @@
                 <input type="datetime-local" id="booking-date" required>
             </div>
             
-            <button type="submit" class="btn-submit">تأكيد وحفظ الحجز</button>
+            <button type="submit" class="btn-submit">تأكيد وحفظ الحجز ✨</button>
         </form>
         <div id="success-message" style="display:none; color: #2e7d32; margin-top: 15px; font-weight: bold;"></div>
     </section>
 
-    <!-- قسم نصائح الخبراء والعناية العامة -->
+    <!-- قسم نصائح الخبراء -->
     <div class="container" id="ai-recommendation-section" style="background: linear-gradient(135deg, #f3e5f5, #e8eaf6);">
         <h2>💡 نصائح الخبراء والعناية العامة</h2>
-        <p id="ai-suggestion-text" style="color: #555; font-size: 1.05rem;">اختر نوع الخدمة في نموذج الحجز بالأعلى للاطلاع على نصائح العناية العامة المرتبطة بها.</p>
+        <p id="ai-suggestion-text" style="color: #555; font-size: 1.05rem;">اختر نوع الخدمة في نموذج الحجز بالأعلى للاطلاع على نصائح العناية العامة.</p>
     </div>
 
-    <!-- قسم الحجوزات السابقة وإدارتها -->
+    <!-- قسم الحجوزات السابقة للعميل -->
     <div class="container" id="my-bookings-section">
-        <h2>حجوزاتي السابقة وإدارتها</h2>
+        <h2>سجل حجوزاتي ومعاملاتي السابقة</h2>
         <ul id="bookings-list" style="list-style-type: none; padding: 0;">
-            <!-- سيتم تعبئة الحجوزات هنا برمجياً -->
+            <!-- يتم تعبئتها برمجياً -->
         </ul>
     </div>
 
-    <!-- تذييل الصفحة مع رابط سري لدخول أصحاب الصالونات -->
+    <!-- تذييل الصفحة -->
     <footer style="text-align: center; padding: 2rem; background: #1a1a1a; color: #aaa; margin-top: 3rem;">
         <p>جميع الحقوق محفوظة لمنصة Salon AI © 2026</p>
         <p><a href="dashboard.html" style="color: #7c4dff; text-decoration: none; font-size: 0.9rem;">🔐 دخول أصحاب الصالونات (إدارة النظام)</a></p>
     </footer>
 
-    <!-- تضمين مكتبة Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- ملف الجافاسكريبت الخارجي -->
     <script src="script.js"></script>
 </body>
 </html>

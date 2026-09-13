@@ -42,7 +42,22 @@ locateBtn.addEventListener('click', function() {
     );
 });
 
-// عناصر DOM الخاصة بالحجز والتخزين والنصائح العامة
+// عناصر DOM الخاصة بالتسجيل، الحجز، والنصائح
+const clientRegisterForm = document.getElementById('client-register-form');
+const regNameInput = document.getElementById('reg-name');
+const regPhoneInput = document.getElementById('reg-phone');
+const regEmailInput = document.getElementById('reg-email');
+const regNationalityInput = document.getElementById('reg-nationality');
+const regSuccess = document.getElementById('reg-success');
+
+const clientAuthBox = document.getElementById('client-auth-box');
+const clientDashboardBox = document.getElementById('client-dashboard-box');
+const welcomeClientTitle = document.getElementById('welcome-client-title');
+const clientInfoDetails = document.getElementById('client-info-details');
+const clientPointsBadge = document.getElementById('client-points-badge');
+const clientSpentBadge = document.getElementById('client-spent-badge');
+const clientLogoutBtn = document.getElementById('client-logout-btn');
+
 const bookingForm = document.getElementById('booking-form');
 const successMessage = document.getElementById('success-message');
 const bookingsList = document.getElementById('bookings-list');
@@ -50,7 +65,8 @@ const salonSelect = document.getElementById('salon-name');
 const serviceSelect = document.getElementById('service-type');
 const bookingDateInput = document.getElementById('booking-date');
 const aiSuggestionText = document.getElementById('ai-suggestion-text');
-const clientNameInput = document.getElementById('client-name'); // حقل اسم العميل المضاف حديثاً للـ CRM
+const clientNameInput = document.getElementById('client-name');
+const clientPhoneInput = document.getElementById('client-phone-input');
 
 // عناصر بطاقة معلومات الصالون
 const salonProfileCard = document.getElementById('salon-profile-card');
@@ -74,14 +90,87 @@ setMinDateTime();
 
 let editingIndex = null;
 
-// قاعدة بيانات آمنة للنصائح العامة والخبراء
+// إدارة جلسة العميل المسجل في الـ localStorage
+function checkClientSession() {
+    const loggedInClient = JSON.parse(localStorage.getItem('current_logged_client'));
+    if (loggedInClient) {
+        clientAuthBox.style.display = 'none';
+        clientDashboardBox.style.display = 'block';
+        welcomeClientTitle.textContent = `أهلاً بك، ${loggedInClient.name} ✨`;
+        clientInfoDetails.innerHTML = `الهاتف: ${loggedInClient.phone} | البريد: ${loggedInClient.email} | الجنسية: ${loggedInClient.nationality}`;
+        
+        // تعبئة حقول الحجز تلقائياً للعميل المسجل
+        if (clientNameInput) clientNameInput.value = loggedInClient.name;
+        if (clientPhoneInput) clientPhoneInput.value = loggedInClient.phone;
+
+        updateClientStats(loggedInClient.name);
+    } else {
+        clientAuthBox.style.display = 'block';
+        clientDashboardBox.style.display = 'none';
+        if (clientNameInput) clientNameInput.value = '';
+        if (clientPhoneInput) clientPhoneInput.value = '';
+    }
+}
+
+// حساب النقاط والمعاملات للعميل المسجل
+function updateClientStats(clientName) {
+    const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
+    const salonsData = JSON.parse(localStorage.getItem('salons_custom_data')) || {};
+    
+    let totalSpent = 0;
+    let clientBookingsCount = 0;
+
+    savedBookings.forEach(booking => {
+        if (booking.clientName === clientName) {
+            clientBookingsCount++;
+            const salonServices = salonsData[booking.salon]?.services || [];
+            const matchedSrv = salonServices.find(s => s.name === booking.service);
+            totalSpent += matchedSrv ? (parseFloat(matchedSrv.price) || 0) : 10;
+        }
+    });
+
+    const points = clientBookingsCount * 50; // كل حجز يمنح 50 نقطة ولاء
+    clientPointsBadge.textContent = `⭐ رصيد النقاط: ${points} نقطة`;
+    clientSpentBadge.textContent = `💳 إجمالي المعاملات: ${totalSpent} BHD`;
+}
+
+// تنفيذ التسجيل الخفيف
+clientRegisterForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const newClient = {
+        name: regNameInput.value.trim(),
+        phone: regPhoneInput.value.trim(),
+        email: regEmailInput.value.trim(),
+        nationality: regNationalityInput.value.trim()
+    };
+
+    localStorage.setItem('current_logged_client', JSON.stringify(newClient));
+    regSuccess.textContent = 'تم تسجيل حسابك بنجاح وأصبحت عضواً معنا! 🎉';
+    regSuccess.style.display = 'block';
+
+    setTimeout(() => {
+        regSuccess.style.display = 'none';
+        checkClientSession();
+        loadBookings();
+    }, 1500);
+});
+
+// تسجيل الخروج
+if (clientLogoutBtn) {
+    clientLogoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('current_logged_client');
+        checkClientSession();
+        loadBookings();
+    });
+}
+
+// قاعدة بيانات آمنة للنصائح العامة
 const generalTips = {
     "قص شعر وتصفيف": "💡 نصيحة عامة: يُنصح بغسل الشعر قبل موعد القص بـ 24 ساعة ليكون في أفضل حالة للتصفيف.",
     "صبغة الشعر وتلوينه": "💡 نصيحة عامة: يفضل عدم غسل الشعر بالماء الساخن لمدة 48 ساعة بعد الصبغة للحفاظ على ثبات اللون.",
     "تنظيف بشرة عميق": "💡 نصيحة عامة: يفضل تجنب التعرض المباشر لأشعة الشمس الحارقة أو وضع المكياج الثقيل لمدة 24 ساعة بعد جلسة التنظيف."
 };
 
-// الاستماع لتغيير نوع الخدمة لعرض النصيحة العامة الآمنة
 serviceSelect.addEventListener('change', function() {
     const selectedService = this.value;
     if (generalTips[selectedService]) {
@@ -95,7 +184,7 @@ serviceSelect.addEventListener('change', function() {
     }
 });
 
-// تحديث الخدمات وبطاقة الهوية ديناميكياً حسب الصالون المختار
+// تحديث الخدمات وبطاقة الصالون ديناميكياً
 function updateSalonProfileAndServices() {
     const selectedSalon = salonSelect.value;
     serviceSelect.innerHTML = '<option value="">-- اختر الخدمة المطلوبة --</option>';
@@ -129,22 +218,26 @@ function updateSalonProfileAndServices() {
 
 salonSelect.addEventListener('change', updateSalonProfileAndServices);
 
-// دالة لعرض الحجوزات المحفوظة
+// عرض الحجوزات (إذا كان مسجلاً يعرض حجوزاته الخاصة فقط، أو يظهر الكل للزائر)
 function loadBookings() {
     bookingsList.innerHTML = '';
     const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
+    const loggedInClient = JSON.parse(localStorage.getItem('current_logged_client'));
+
+    // تصفية الحجوزات بناءً على العميل المسجل إن وجدت جلسة نشطة
+    const displayBookings = loggedInClient ? savedBookings.filter(b => b.clientName === loggedInClient.name) : savedBookings;
     
-    if (savedBookings.length === 0) {
+    if (displayBookings.length === 0) {
         bookingsList.innerHTML = '<li style="color: #666; padding: 8px 0;">لا توجد حجوزات مسجلة حتى الآن.</li>';
         return;
     }
 
-    savedBookings.forEach((booking, index) => {
+    displayBookings.forEach((booking, index) => {
         const li = document.createElement('li');
         li.style.cssText = "background: #f9f9f9; margin-bottom: 10px; padding: 10px; border-radius: 6px; border-right: 4px solid #ff4081; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;";
         
         const bookingInfo = document.createElement('div');
-        bookingInfo.innerHTML = `<strong>الحجز #${index + 1}:</strong> العميل: ${booking.clientName || 'زائر'} | الصالون: ${booking.salon} - الخدمة: ${booking.service} <br><small style="color: #666;">الموعد: ${booking.date}</small>`;
+        bookingInfo.innerHTML = `<strong>الحجز:</strong> العميل: ${booking.clientName || 'زائر'} (${booking.phone || 'بدون هاتف'}) | الصالون: ${booking.salon} - الخدمة: ${booking.service} <br><small style="color: #666;">الموعد: ${booking.date}</small>`;
         
         const actionsDiv = document.createElement('div');
         actionsDiv.style.display = "flex";
@@ -172,9 +265,9 @@ function editBooking(index) {
     const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
     const booking = savedBookings[index];
 
-    if (clientNameInput && booking.clientName) {
-        clientNameInput.value = booking.clientName;
-    }
+    if (clientNameInput && booking.clientName) clientNameInput.value = booking.clientName;
+    if (clientPhoneInput && booking.phone) clientPhoneInput.value = booking.phone;
+    
     salonSelect.value = booking.salon;
     updateSalonProfileAndServices();
     serviceSelect.value = booking.service;
@@ -193,16 +286,18 @@ function removeBooking(index) {
         editingIndex = null;
         bookingForm.reset();
         setMinDateTime();
+        checkClientSession();
     }
     loadBookings();
+    const loggedIn = JSON.parse(localStorage.getItem('current_logged_client'));
+    if (loggedIn) updateClientStats(loggedIn.name);
 }
 
-loadBookings();
-
-// الاستماع لعملية إرسال نموذج الحجز
+// إرسال الحجز
 bookingForm.addEventListener('submit', function(e) {
     e.preventDefault(); 
     const clientName = clientNameInput ? clientNameInput.value.trim() : "زائر";
+    const phone = clientPhoneInput ? clientPhoneInput.value.trim() : "";
     const salon = salonSelect.value;
     const service = serviceSelect.value;
     const date = bookingDateInput.value;
@@ -217,21 +312,34 @@ bookingForm.addEventListener('submit', function(e) {
         const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
 
         if (editingIndex !== null) {
-            savedBookings[editingIndex] = { clientName, salon, service, date };
+            savedBookings[editingIndex] = { clientName, phone, salon, service, date };
             successMessage.textContent = `تم تحديث حجزك بنجاح ✨`;
             editingIndex = null;
         } else {
-            savedBookings.push({ clientName, salon, service, date });
-            successMessage.textContent = `تم تسجيل حجزك بنجاح وحفظه في الذاكرة المحلية ✨`;
+            savedBookings.push({ clientName, phone, salon, service, date });
+            successMessage.textContent = `تم تسجيل حجزك بنجاح وإضافته لسجلك الشخصي ✨`;
         }
         
         localStorage.setItem('salon_bookings', JSON.stringify(savedBookings));
         successMessage.style.display = 'block';
         
         loadBookings();
+        
+        const loggedInClient = JSON.parse(localStorage.getItem('current_logged_client'));
         bookingForm.reset();
         setMinDateTime();
+        
+        if (loggedInClient) {
+            clientNameInput.value = loggedInClient.name;
+            clientPhoneInput.value = loggedInClient.phone;
+            updateClientStats(loggedInClient.name);
+        }
+
         salonProfileCard.style.display = 'none';
         aiSuggestionText.textContent = "اختر نوع الخدمة في نموذج الحجز بالأعلى للاطلاع على نصائح العناية العامة المرتبطة بها.";
     }
 });
+
+// تهيئة أولية عند تشغيل الصفحة
+checkClientSession();
+loadBookings();
