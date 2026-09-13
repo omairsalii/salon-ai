@@ -1,0 +1,99 @@
+{
+  "Dashboard": {
+    "title": "لوحة التحكم",
+    "welcome": "أهلاً بك في نظام إدارة الصالون",
+    "subtitle": "نظرة عامة على أداء الصالون والحجوزات اليومية",
+    "statusOpen": "الصالون مفتوح حالياً",
+    "overview": "نظرة عامة",
+    "appointments": "المواعيد والحجوزات",
+    "services": "الخدمات والأسعار",
+    "staff": "فريق العمل",
+    "settings": "الإعدادات",
+    "backToStore": "العودة للمتجر الرئيسي",
+    "todayBookings": "حجوزات اليوم",
+    "expectedRevenue": "الإيرادات المتوقعة",
+    "recentBookings": "الحجوزات الأخيرة",
+    "customerRating": "تقييم العملاء",
+    "clientName": "اسم العميل",
+    "service": "الخدمة",
+    "time": "الوقت",
+    "assignedStaff": "الموظف المسؤول",
+    "status": "الحالة",
+    "confirmed": "مؤكد",
+    "completed": "مكتمل",
+    "pending": "قيد الانتظار",
+    "cancelled": "ملغي"
+  },
+    "Bookings": {
+      "title": "إدارة المواعيد",
+      "newBooking": "حجز جديد",
+      "clientName": "اسم العميل",
+      "service": "الخدمة",
+      "time": "الوقت",
+      "status": "الحالة",
+      "confirmed": "مؤكد",
+      "pending": "قيد الانتظار",
+      "cancelled": "ملغي",
+      "completed": "مكتمل"
+  },
+  "Common": {
+    "appName": "Salon AI",
+    "currency": "ر.س",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "edit": "تعديل",
+    "delete": "حذف"
+  },
+      "Clients": {
+        "title": "إدارة العملاء",
+        "newClient": "عميل جديد",
+        "name": "اسم العميل",
+        "phone": "رقم الجوال",
+        "totalVisits": "عدد الزيارات",
+        "lastVisit": "آخر زيارة",
+        "actions": "الإجراءات"
+      },
+        "Services": {
+          "title": "إدارة الخدمات والأسعار",
+          "newService": "إضافة خدمة جديدة",
+          "serviceName": "اسم الخدمة",
+          "price": "السعر",
+          "duration": "المدة الزمنية",
+          "category": "القسم",
+          "actions": "الإجراءات"
+        },
+          "Staff": {
+            "title": "إدارة فريق العمل",
+            "newStaff": "إضافة موظف جديد",
+            "name": "اسم الموظف",
+            "role": "التخصص / المسمى",
+            "phone": "رقم الجوال",
+            "status": "حالة الدوام",
+            "active": "على رأس العمل",
+            "onLeave": "في إجازة",
+            "actions": "الإجراءات"
+          },
+            "Settings": {
+              "title": "إعدادات الصالون",
+              "salonName": "اسم الصالون",
+              "city": "المدينة",
+              "workingHours": "ساعات العمل",
+              "saveChanges": "حفظ التغييرات"
+            },
+              "Marketplace": {
+                "searchTitle": "اكتشف واحجز أفضل الصالونات بكل سهولة",
+                "searchSubtitle": "منصتك الذكية للعثور على أقرب صالون تجميل وحلاقة في دول الخليج",
+                "servicePlaceholder": "قص شعر، عناية بالبشرة، مكياج...",
+                "cityPlaceholder": "الرياض، دبي، المنامة، الكويت...",
+                "searchButton": "بحث",
+                "nearbySalons": "الصالونات المميزة قريباً منك",
+                "distance": "المسافة",
+                "rating": "التقييم",
+                "bookNow": "عرض الخدمات والحجز"
+              }
+            }
+          }
+        }
+      }
+    }
+}
