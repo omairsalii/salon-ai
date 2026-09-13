@@ -44,6 +44,13 @@
     <section class="container" id="booking">
         <h2>حجز موعد جديد أو تحديث موعد</h2>
         <form id="booking-form">
+            
+            <!-- حقل اسم العميل (مهم جداً لارتباطه بنظام VIP CRM في لوحة التحكم) -->
+            <div class="form-group">
+                <label for="client-name">اسمك الكريم:</label>
+                <input type="text" id="client-name" required placeholder="مثال: فاطمة محمد">
+            </div>
+
             <div class="form-group">
                 <label for="salon-name">اختر الصالون:</label>
                 <select id="salon-name" required>

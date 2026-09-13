@@ -50,6 +50,7 @@ const salonSelect = document.getElementById('salon-name');
 const serviceSelect = document.getElementById('service-type');
 const bookingDateInput = document.getElementById('booking-date');
 const aiSuggestionText = document.getElementById('ai-suggestion-text');
+const clientNameInput = document.getElementById('client-name'); // حقل اسم العميل المضاف حديثاً للـ CRM
 
 // عناصر بطاقة معلومات الصالون
 const salonProfileCard = document.getElementById('salon-profile-card');
@@ -143,7 +144,7 @@ function loadBookings() {
         li.style.cssText = "background: #f9f9f9; margin-bottom: 10px; padding: 10px; border-radius: 6px; border-right: 4px solid #ff4081; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;";
         
         const bookingInfo = document.createElement('div');
-        bookingInfo.innerHTML = `<strong>الحجز #${index + 1}:</strong> ${booking.salon} - ${booking.service} <br><small style="color: #666;">الموعد: ${booking.date}</small>`;
+        bookingInfo.innerHTML = `<strong>الحجز #${index + 1}:</strong> العميل: ${booking.clientName || 'زائر'} | الصالون: ${booking.salon} - الخدمة: ${booking.service} <br><small style="color: #666;">الموعد: ${booking.date}</small>`;
         
         const actionsDiv = document.createElement('div');
         actionsDiv.style.display = "flex";
@@ -171,6 +172,9 @@ function editBooking(index) {
     const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
     const booking = savedBookings[index];
 
+    if (clientNameInput && booking.clientName) {
+        clientNameInput.value = booking.clientName;
+    }
     salonSelect.value = booking.salon;
     updateSalonProfileAndServices();
     serviceSelect.value = booking.service;
@@ -198,6 +202,7 @@ loadBookings();
 // الاستماع لعملية إرسال نموذج الحجز
 bookingForm.addEventListener('submit', function(e) {
     e.preventDefault(); 
+    const clientName = clientNameInput ? clientNameInput.value.trim() : "زائر";
     const salon = salonSelect.value;
     const service = serviceSelect.value;
     const date = bookingDateInput.value;
@@ -212,11 +217,11 @@ bookingForm.addEventListener('submit', function(e) {
         const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
 
         if (editingIndex !== null) {
-            savedBookings[editingIndex] = { salon, service, date };
+            savedBookings[editingIndex] = { clientName, salon, service, date };
             successMessage.textContent = `تم تحديث حجزك بنجاح ✨`;
             editingIndex = null;
         } else {
-            savedBookings.push({ salon, service, date });
+            savedBookings.push({ clientName, salon, service, date });
             successMessage.textContent = `تم تسجيل حجزك بنجاح وحفظه في الذاكرة المحلية ✨`;
         }
         

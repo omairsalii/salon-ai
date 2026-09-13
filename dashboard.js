@@ -16,6 +16,14 @@ const newServicePriceInput = document.getElementById('new-service-price');
 const salonServicesList = document.getElementById('salon-services-list');
 const tenantBookingsList = document.getElementById('tenant-bookings-list');
 
+// عناصر طاقم العمل والإحصائيات
+const addStaffForm = document.getElementById('add-staff-form');
+const staffNameInput = document.getElementById('staff-name');
+const staffRoleInput = document.getElementById('staff-role');
+const staffList = document.getElementById('staff-list');
+const statCurrentRevenue = document.getElementById('stat-current-revenue');
+const statTotalBookings = document.getElementById('stat-total-bookings');
+
 const TENANT_SECRET_KEY = "salon123";
 const CURRENT_SALON_ID = "الفرع الرئيسي - المنامة";
 
@@ -54,6 +62,10 @@ function loadSalonManagementData() {
                 { name: "قص شعر وتصفيف", price: "10 BHD" },
                 { name: "تنظيف بشرة عميق", price: "25 BHD" }
             ],
+            staff: [
+                { name: "سارة أحمد", role: "أخصائية شعر وتجميل" },
+                { name: "منى خالد", role: "خبيرة عناية بالبشرة" }
+            ],
             logo: "",
             phone: "+973 17000000",
             cr: "123456-1"
@@ -67,7 +79,9 @@ function loadSalonManagementData() {
     salonCrInput.value = currentSalon.cr || '';
 
     renderSalonServices(currentSalon.services);
-    loadTenantBookings();
+    renderStaffList(currentSalon.staff || []);
+    loadTenantBookingsAndAnalytics(currentSalon.services);
+    renderVipCrmDashboard(currentSalon.services);
 }
 
 // حفظ بيانات الهوية التجارية والسجل
@@ -87,6 +101,7 @@ brandSettingsForm.addEventListener('submit', (e) => {
     setTimeout(() => { brandSuccess.style.display = 'none'; }, 3000);
 });
 
+// إدارة الخدمات
 function renderSalonServices(services) {
     salonServicesList.innerHTML = '';
     services.forEach((srv, index) => {
@@ -126,10 +141,63 @@ addServiceForm.addEventListener('submit', (e) => {
     newServicePriceInput.value = '';
 });
 
-function loadTenantBookings() {
+// إدارة طاقم العمل
+function renderStaffList(staffMembers) {
+    staffList.innerHTML = '';
+    staffMembers.forEach((staff, index) => {
+        const li = document.createElement('li');
+        li.style.cssText = "background: #f9f9f9; padding: 10px; margin-bottom: 6px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid #7c4dff;";
+        li.innerHTML = `<span><strong>${staff.name}</strong> - <span style="color:#666;">${staff.role}</span></span>`;
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'حذف';
+        deleteBtn.style.cssText = "background: #ff5252; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;";
+        deleteBtn.addEventListener('click', () => {
+            staffMembers.splice(index, 1);
+            let salonsData = JSON.parse(localStorage.getItem('salons_custom_data')) || {};
+            salonsData[CURRENT_SALON_ID].staff = staffMembers;
+            localStorage.setItem('salons_custom_data', JSON.stringify(salonsData));
+            renderStaffList(staffMembers);
+        });
+
+        li.appendChild(deleteBtn);
+        staffList.appendChild(li);
+    });
+}
+
+addStaffForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = staffNameInput.value;
+    const role = staffRoleInput.value;
+
+    let salonsData = JSON.parse(localStorage.getItem('salons_custom_data')) || {};
+    if (!salonsData[CURRENT_SALON_ID].staff) salonsData[CURRENT_SALON_ID].staff = [];
+
+    salonsData[CURRENT_SALON_ID].staff.push({ name, role });
+    localStorage.setItem('salons_custom_data', JSON.stringify(salonsData));
+
+    renderStaffList(salonsData[CURRENT_SALON_ID].staff);
+    staffNameInput.value = '';
+    staffRoleInput.value = '';
+});
+
+// تحميل الحجوزات وحساب الإيرادات وتحليل الأرقام الشهرية
+function loadTenantBookingsAndAnalytics(salonServices) {
     tenantBookingsList.innerHTML = '';
     const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
     const myBookings = savedBookings.filter(b => b.salon === CURRENT_SALON_ID);
+
+    statTotalBookings.textContent = myBookings.length;
+
+    let totalRevenue = 0;
+    myBookings.forEach(booking => {
+        const matchedService = salonServices.find(s => s.name === booking.service);
+        if (matchedService) {
+            const priceValue = parseFloat(matchedService.price) || 0;
+            totalRevenue += priceValue;
+        }
+    });
+    statCurrentRevenue.textContent = totalRevenue + " BHD";
 
     if (myBookings.length === 0) {
         tenantBookingsList.innerHTML = '<li style="color: #666;">لا توجد حجوزات واردة لهذا الفرع حتى الآن.</li>';
@@ -139,8 +207,59 @@ function loadTenantBookings() {
     myBookings.forEach((booking) => {
         const li = document.createElement('li');
         li.style.cssText = "background: #f9f9f9; margin-bottom: 8px; padding: 10px; border-radius: 6px; border-right: 4px solid #7c4dff;";
-        li.innerHTML = `الخدمة: <strong>${booking.service}</strong> | الموعد: ${booking.date}`;
+        li.innerHTML = `العميل: <strong>${booking.clientName || 'زائر'}</strong> | الخدمة: <strong>${booking.service}</strong> | الموعد: ${booking.date}`;
         tenantBookingsList.appendChild(li);
+    });
+}
+
+// نظام إدارة علاقات العملاء الذكي (VIP CRM)
+function renderVipCrmDashboard(salonServices) {
+    const crmListContainer = document.getElementById('vip-crm-list');
+    if (!crmListContainer) return;
+    
+    crmListContainer.innerHTML = '';
+    const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
+    const myBookings = savedBookings.filter(b => b.salon === CURRENT_SALON_ID);
+
+    if (myBookings.length === 0) {
+        crmListContainer.innerHTML = '<li style="color: #666;">لا توجد بيانات عملاء كافية حتى الآن. سيظهر العملاء تلقائياً عند أول حجز.</li>';
+        return;
+    }
+
+    let clientsMap = {};
+    myBookings.forEach(booking => {
+        const clientName = booking.clientName || "عميل زائر";
+        const matchedService = salonServices.find(s => s.name === booking.service);
+        const price = matchedService ? (parseFloat(matchedService.price) || 0) : 10;
+
+        if (!clientsMap[clientName]) {
+            clientsMap[clientName] = { visits: 0, totalSpent: 0, lastBooking: booking.date };
+        }
+        clientsMap[clientName].visits += 1;
+        clientsMap[clientName].totalSpent += price;
+        if (new Date(booking.date) > new Date(clientsMap[clientName].lastBooking)) {
+            clientsMap[clientName].lastBooking = booking.date;
+        }
+    });
+
+    let clientsArray = Object.keys(clientsMap).map(name => {
+        return { name, ...clientsMap[name] };
+    });
+    clientsArray.sort((a, b) => b.totalSpent - a.totalSpent);
+
+    clientsArray.forEach(client => {
+        const isVip = client.totalSpent >= 20 || client.visits >= 2;
+        const li = document.createElement('li');
+        li.style.cssText = `background: ${isVip ? '#fff8e1' : '#f9f9f9'}; padding: 10px 12px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid ${isVip ? '#ffa000' : '#7c4dff'};`;
+        
+        li.innerHTML = `
+            <div>
+                <strong>${client.name}</strong> ${isVip ? '<span style="background: #ffa000; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 5px;">VIP عميل مميز</span>' : ''}
+                <div style="font-size: 0.85rem; color: #666; margin-top: 3px;">الزيارات: ${client.visits} | إجمالي الإنفاق: ${client.totalSpent} BHD</div>
+            </div>
+            <button onclick="alert('تم إرسال عرض ترويجي خصم 20% عبر رسائل الواتساب للعميل: ${client.name}')" style="background: #1565c0; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">إرسال عرض استرجاع 🎁</button>
+        `;
+        crmListContainer.appendChild(li);
     });
 }
 
