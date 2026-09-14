@@ -42,6 +42,11 @@ const staffList = document.getElementById('staff-list');
 const statCurrentRevenue = document.getElementById('stat-current-revenue');
 const statTotalBookings = document.getElementById('stat-total-bookings');
 
+// عناصر التقويم
+const calendarFilterDateInput = document.getElementById('calendar-filter-date');
+const resetDateFilterBtn = document.getElementById('reset-date-filter');
+const salonCalendarTbody = document.getElementById('salon-calendar-tbody');
+
 // التبديل بين واجهة تسجيل الدخول والاشتراك
 showTenantLoginBtn.addEventListener('click', () => {
     tenantLoginForm.style.display = 'block';
@@ -86,13 +91,11 @@ function checkAuthSession() {
         return;
     }
 
-    // التحقق من صلاحية الفترة التجريبية (14 يوم) أو الاشتراك المدفوع
     const now = new Date();
     const trialEnds = new Date(salon.trialEndsAt);
     const isSubscriptionActive = salon.isPaidPlan || (now <= trialEnds);
 
     if (!isSubscriptionActive) {
-        // انتهت الـ 14 يوم ولم يشترك بباقة مدفوعة -> إظهار نافذة اختيار الباقات الثلاث
         loginModal.style.display = 'flex';
         dashboardContent.style.display = 'none';
         showUpgradeModal(salon);
@@ -104,7 +107,7 @@ function checkAuthSession() {
     loadSalonManagementData(currentCr);
 }
 
-// نافذة اختيار الـ 3 باقات عند انتهاء التجربة المجانية
+// نافذة اختيار الباقات الثلاث عند انتهاء التجربة المجانية
 function showUpgradeModal(salon) {
     const modalBox = loginModal.querySelector('div');
     modalBox.style.maxWidth = "550px";
@@ -113,7 +116,6 @@ function showUpgradeModal(salon) {
         <p style="color: #666; font-size: 0.85rem; margin-bottom: 1rem;">اختر إحدى الباقات الثلاث أدناه لمتابعة العمل في لوحة تحكم صالون ${salon.name}:</p>
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1.2rem; text-align: right;">
-            <!-- الباقة 1: الأساسية -->
             <div style="border: 2px solid #ccc; padding: 10px; border-radius: 8px; cursor: pointer;" onclick="upgradePlan('${salon.cr}', 'الباقة الأساسية', 19)">
                 <strong style="color: #333;">1. الأساسية</strong><br>
                 <span style="color: #7c4dff; font-weight: bold; font-size: 1.1rem;">19 BHD</span><small>/شهرياً</small>
@@ -121,7 +123,6 @@ function showUpgradeModal(salon) {
                 <small style="color:#666; font-size: 0.75rem;">إدارة الخدمات وطاقم العمل الأساسي والحجوزات.</small>
             </div>
             
-            <!-- الباقة 2: الاحترافية -->
             <div style="border: 2px solid #7c4dff; padding: 10px; border-radius: 8px; cursor: pointer; background: #f3e5f5;" onclick="upgradePlan('${salon.cr}', 'الباقة الاحترافية', 39)">
                 <strong style="color: #7c4dff;">2. الاحترافية ⭐</strong><br>
                 <span style="color: #7c4dff; font-weight: bold; font-size: 1.1rem;">39 BHD</span><small>/شهرياً</small>
@@ -129,26 +130,24 @@ function showUpgradeModal(salon) {
                 <small style="color:#555; font-size: 0.75rem;">التحليلات المالية المتقدمة + نظام العملاء VIP.</small>
             </div>
 
-            <!-- الباقة 3: المؤسسات -->
             <div style="border: 2px solid #2e7d32; padding: 10px; border-radius: 8px; cursor: pointer; background: #e8f5e9;" onclick="upgradePlan('${salon.cr}', 'باقة المؤسسات', 79)">
                 <strong style="color: #2e7d32;">3. المؤسسات 🏢</strong><br>
                 <span style="color: #2e7d32; font-weight: bold; font-size: 1.1rem;">79 BHD</span><small>/شهرياً</small>
                 <hr style="margin: 5px 0; border:0; border-top:1px solid #c8e6c9;">
-                <small style="color:#555; font-size: 0.75rem;">دعم متعدد الفروع، عروض واتساب ذكية، وأولوية دعم.</small>
+                <small style="color:#555; font-size: 0.75rem;">دعم متعدد الفروع، وعروض واتساب ذكية.</small>
             </div>
         </div>
         <button onclick="location.reload()" class="btn-secondary" style="background: #666; color: white; width: 100%; padding: 8px;">تسجيل الخروج</button>
     `;
 }
 
-// دالة تفعيل الباقة المدفوعة المختارة
 window.upgradePlan = function(cr, planName, price) {
     let allSalons = JSON.parse(localStorage.getItem('all_registered_salons')) || {};
     if (allSalons[cr]) {
         allSalons[cr].isPaidPlan = true;
         allSalons[cr].currentPlan = planName;
         localStorage.setItem('all_registered_salons', JSON.stringify(allSalons));
-        alert(`تم تفعيل اشتراكك بنجاح في ${planName} بقيمة ${price} BHD للشهر! شكراً لثقتك.`);
+        alert(`تم تفعيل اشتراكك بنجاح في ${planName} بقيمة ${price} BHD للشهر!`);
         location.reload();
     }
 };
@@ -258,6 +257,59 @@ function loadSalonManagementData(cr) {
     renderStaffList(cr, currentSalon.staff || []);
     loadTenantBookingsAndAnalytics(currentSalon.name, currentSalon.services);
     renderVipCrmDashboard(currentSalon.name, currentSalon.services);
+    renderSalonCalendar(currentSalon.name, currentSalon.services);
+}
+
+// جدول التقويم والمواعيد
+function renderSalonCalendar(salonName, salonServices, filterDate = '') {
+    if (!salonCalendarTbody) return;
+    salonCalendarTbody.innerHTML = '';
+
+    const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
+    let myBookings = savedBookings.filter(b => b.salon === salonName || b.salonId === salonName);
+
+    if (filterDate) {
+        myBookings = myBookings.filter(b => b.date && b.date.startsWith(filterDate));
+    }
+
+    if (myBookings.length === 0) {
+        salonCalendarTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 15px; color: #666;">لا توجد مواعيد مسجلة في هذا التاريخ.</td></tr>`;
+        return;
+    }
+
+    myBookings.forEach(booking => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = "1px solid #eee";
+        tr.innerHTML = `
+            <td style="padding: 10px; border: 1px solid #ddd;">${booking.date || 'غير محدد'}</td>
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>${booking.clientName || 'عميل زائر'}</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${booking.service}</td>
+            <td style="padding: 10px; border: 1px solid #ddd;"><span style="background: #e8f5e9; color: #2e7d32; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem;">مؤكد ✅</span></td>
+        `;
+        salonCalendarTbody.appendChild(tr);
+    });
+}
+
+if (calendarFilterDateInput) {
+    calendarFilterDateInput.addEventListener('change', (e) => {
+        const selectedDate = e.target.value;
+        const currentCr = sessionStorage.getItem('current_salon_cr');
+        let allSalons = JSON.parse(localStorage.getItem('all_registered_salons')) || {};
+        if (allSalons[currentCr]) {
+            renderSalonCalendar(allSalons[currentCr].name, allSalons[currentCr].services, selectedDate);
+        }
+    });
+}
+
+if (resetDateFilterBtn) {
+    resetDateFilterBtn.addEventListener('click', () => {
+        if (calendarFilterDateInput) calendarFilterDateInput.value = '';
+        const currentCr = sessionStorage.getItem('current_salon_cr');
+        let allSalons = JSON.parse(localStorage.getItem('all_registered_salons')) || {};
+        if (allSalons[currentCr]) {
+            renderSalonCalendar(allSalons[currentCr].name, allSalons[currentCr].services, '');
+        }
+    });
 }
 
 // حفظ الهوية التجارية
@@ -400,7 +452,7 @@ function renderVipCrmDashboard(salonName, salonServices) {
     const myBookings = savedBookings.filter(b => b.salon === salonName || b.salonId === salonName);
 
     if (myBookings.length === 0) {
-        crmListContainer.innerHTML = '<li style="color: #666;">لا توجد بيانات عملاء كافية حتى الآن. سيظهر العملاء تلقائياً عند أول حجز.</li>';
+        crmListContainer.innerHTML = '<li style="color: #666;">لا توجد بيانات عملاء كافية حتى الآن.</li>';
         return;
     }
 
