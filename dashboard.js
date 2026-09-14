@@ -47,6 +47,15 @@ const calendarFilterDateInput = document.getElementById('calendar-filter-date');
 const resetDateFilterBtn = document.getElementById('reset-date-filter');
 const salonCalendarTbody = document.getElementById('salon-calendar-tbody');
 
+// عناصر نموذج العميل اليدوي والحملات
+const addManualClientForm = document.getElementById('add-manual-client-form');
+const manualClientNameInput = document.getElementById('manual-client-name');
+const broadcastCampaignForm = document.getElementById('broadcast-campaign-form');
+const broadcastOccasionInput = document.getElementById('broadcast-occasion');
+const broadcastServiceSelect = document.getElementById('broadcast-service-select');
+const broadcastDiscountSelect = document.getElementById('broadcast-discount');
+const broadcastChannelSelect = document.getElementById('broadcast-channel');
+
 // التبديل بين واجهة تسجيل الدخول والاشتراك
 showTenantLoginBtn.addEventListener('click', () => {
     tenantLoginForm.style.display = 'block';
@@ -56,7 +65,7 @@ showTenantLoginBtn.addEventListener('click', () => {
     showTenantRegisterBtn.style.background = '#e0e0e0';
     showTenantRegisterBtn.style.color = '#333';
     authModalTitle.textContent = 'بوابة أصحاب الصالونات 🏢';
-    authModalDesc.textContent = 'قم بتسجيل الدخول للوحة التحكم الخاصة بصالونك.';
+    authModalDesc.textContent = 'قم بتسجيل الدخول لوحة التحكم الخاصة بصالونك.';
     loginErrorMsg.style.display = 'none';
 });
 
@@ -72,7 +81,7 @@ showTenantRegisterBtn.addEventListener('click', () => {
     regSuccessMsg.style.display = 'none';
 });
 
-// فحص الجلسة والتحقق من حالة الاشتراك وفترة الـ 14 يوم
+// فحص الجلسة والاشتراك
 function checkAuthSession() {
     const currentCr = sessionStorage.getItem('current_salon_cr');
     if (!currentCr) {
@@ -107,7 +116,7 @@ function checkAuthSession() {
     loadSalonManagementData(currentCr);
 }
 
-// نافذة اختيار الباقات الثلاث عند انتهاء التجربة المجانية
+// نافذة اختيار الباقات الثلاث
 function showUpgradeModal(salon) {
     const modalBox = loginModal.querySelector('div');
     modalBox.style.maxWidth = "550px";
@@ -134,7 +143,7 @@ function showUpgradeModal(salon) {
                 <strong style="color: #2e7d32;">3. المؤسسات 🏢</strong><br>
                 <span style="color: #2e7d32; font-weight: bold; font-size: 1.1rem;">79 BHD</span><small>/شهرياً</small>
                 <hr style="margin: 5px 0; border:0; border-top:1px solid #c8e6c9;">
-                <small style="color:#555; font-size: 0.75rem;">دعم متعدد الفروع، وعروض واتساب ذكية.</small>
+                <small style="color:#555; font-size: 0.75rem;">دعم متعدد الفروع، وعروض واتساب وإيميل ذكية.</small>
             </div>
         </div>
         <button onclick="location.reload()" class="btn-secondary" style="background: #666; color: white; width: 100%; padding: 8px;">تسجيل الخروج</button>
@@ -152,7 +161,7 @@ window.upgradePlan = function(cr, planName, price) {
     }
 };
 
-// تسجيل دخول الصالون
+// تسجيل الدخول
 tenantLoginForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const cr = loginTenantCrInput.value.trim();
@@ -172,7 +181,8 @@ tenantLoginForm.addEventListener('submit', (e) => {
             isPaidPlan: false,
             services: [{ name: "قص شعر وتصفيف", price: "10 BHD" }],
             staff: [{ name: "سارة أحمد", role: "أخصائية شعر" }],
-            logo: ""
+            logo: "",
+            manualVipClients: []
         };
         localStorage.setItem('all_registered_salons', JSON.stringify(allSalons));
     }
@@ -187,7 +197,7 @@ tenantLoginForm.addEventListener('submit', (e) => {
     }
 });
 
-// تسجيل صالون جديد وبدء الـ 14 يوم مجاناً
+// تسجيل صالون جديد
 tenantRegisterForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const name = regTenantNameInput.value.trim();
@@ -214,7 +224,8 @@ tenantRegisterForm.addEventListener('submit', (e) => {
         isPaidPlan: false,
         logo: "",
         services: [{ name: "خدمة افتتاحية", price: "15 BHD" }],
-        staff: [{ name: "أخصائية الصالون", role: "خبير تجميل عام" }]
+        staff: [{ name: "أخصائية الصالون", role: "خبير تجميل عام" }],
+        manualVipClients: []
     };
 
     localStorage.setItem('all_registered_salons', JSON.stringify(allSalons));
@@ -258,6 +269,19 @@ function loadSalonManagementData(cr) {
     loadTenantBookingsAndAnalytics(currentSalon.name, currentSalon.services);
     renderVipCrmDashboard(currentSalon.name, currentSalon.services);
     renderSalonCalendar(currentSalon.name, currentSalon.services);
+    populateBroadcastServices(currentSalon.services);
+}
+
+// تعبئة خدمات نموذج الحملات الجماعية
+function populateBroadcastServices(services) {
+    if (!broadcastServiceSelect) return;
+    broadcastServiceSelect.innerHTML = '';
+    services.forEach(s => {
+        const option = document.createElement('option');
+        option.value = s.name;
+        option.textContent = `${s.name} (${s.price})`;
+        broadcastServiceSelect.appendChild(option);
+    });
 }
 
 // جدول التقويم والمواعيد
@@ -312,6 +336,189 @@ if (resetDateFilterBtn) {
     });
 }
 
+// نظام علاقات العملاء الذكي (VIP CRM المطور مع دعم القنوات وحجم الخصم)
+function renderVipCrmDashboard(salonName, salonServices) {
+    const crmListContainer = document.getElementById('vip-crm-list');
+    if (!crmListContainer) return;
+    
+    crmListContainer.innerHTML = '';
+    const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
+    const myBookings = savedBookings.filter(b => b.salon === salonName || b.salonId === salonName);
+
+    let allSalons = JSON.parse(localStorage.getItem('all_registered_salons')) || {};
+    const currentCr = sessionStorage.getItem('current_salon_cr');
+    let salonData = allSalons[currentCr] || {};
+    if (!salonData.manualVipClients) salonData.manualVipClients = [];
+
+    let clientsMap = {};
+    myBookings.forEach(booking => {
+        const clientName = booking.clientName || "عميل زائر";
+        const matchedService = salonServices.find(s => s.name === booking.service);
+        const price = matchedService ? (parseFloat(matchedService.price) || 0) : 10;
+
+        if (!clientsMap[clientName]) {
+            clientsMap[clientName] = { visits: 0, totalSpent: 0, lastBooking: booking.date };
+        }
+        clientsMap[clientName].visits += 1;
+        clientsMap[clientName].totalSpent += price;
+    });
+
+    salonData.manualVipClients.forEach(clientName => {
+        if (!clientsMap[clientName]) {
+            clientsMap[clientName] = { visits: 0, totalSpent: 0, lastBooking: 'يدوي' };
+        }
+    });
+
+    let clientsArray = Object.keys(clientsMap).map(name => ({ 
+        name, 
+        ...clientsMap[name],
+        isManualVip: salonData.manualVipClients.includes(name)
+    }));
+
+    clientsArray.sort((a, b) => b.totalSpent - a.totalSpent);
+
+    if (clientsArray.length === 0) {
+        crmListContainer.innerHTML = '<li style="color: #666;">قائمة الزبائن فارغة حالياً. أضف عملاء جدد وسيتم حفظهم هنا بشكل دائم.</li>';
+        return;
+    }
+
+    clientsArray.forEach(client => {
+        const isVip = client.isManualVip || client.totalSpent >= 20 || client.visits >= 2;
+        const li = document.createElement('li');
+        li.style.cssText = `background: ${isVip ? '#fff8e1' : '#f9f9f9'}; padding: 12px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid ${isVip ? '#ffa000' : '#7c4dff'}; flex-wrap: wrap; gap: 10px;`;
+        
+        let servicesOptionsHtml = salonServices.map(s => `<option value="${s.name}">${s.name} (${s.price})</option>`).join('');
+
+        li.innerHTML = `
+            <div style="flex: 1; min-width: 170px;">
+                <strong>${client.name}</strong> ${isVip ? '<span style="background: #ffa000; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 5px;">VIP مميز ⭐</span>' : ''}
+                <div style="font-size: 0.85rem; color: #666; margin-top: 3px;">الزيارات: ${client.visits} | الإنفاق: ${client.totalSpent} BHD</div>
+            </div>
+            
+            <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+                <button onclick="toggleVipStatus('${client.name}')" style="background: ${client.isManualVip ? '#d32f2f' : '#2e7d32'}; color: white; border: none; padding: 5px 7px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">
+                    ${client.isManualVip ? 'إلغاء VIP' : 'تعيين VIP ⭐'}
+                </button>
+
+                <select id="service-select-${client.name.replace(/\s+/g, '')}" style="padding: 4px; font-size: 0.75rem; border-radius: 4px; border: 1px solid #ccc;">
+                    ${servicesOptionsHtml || '<option>لا توجد خدمات</option>'}
+                </select>
+
+                <select id="discount-select-${client.name.replace(/\s+/g, '')}" style="padding: 4px; font-size: 0.75rem; border-radius: 4px; border: 1px solid #ccc;">
+                    <option value="10%">خصم 10%</option>
+                    <option value="20%" selected>خصم 20%</option>
+                    <option value="30%">خصم 30%</option>
+                    <option value="50%">خصم 50%</option>
+                </select>
+
+                <select id="channel-select-${client.name.replace(/\s+/g, '')}" style="padding: 4px; font-size: 0.75rem; border-radius: 4px; border: 1px solid #ccc;">
+                    <option value="whatsapp">واتساب 📱</option>
+                    <option value="email">إيميل 📧</option>
+                </select>
+
+                <button onclick="sendTargetedRetentionOffer('${client.name}')" style="background: #1565c0; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">
+                    إرسال 🎁
+                </button>
+            </div>
+        `;
+        crmListContainer.appendChild(li);
+    });
+}
+
+// دالة تبديل حالة VIP يدوياً وحفظها
+window.toggleVipStatus = function(clientName) {
+    const currentCr = sessionStorage.getItem('current_salon_cr');
+    let allSalons = JSON.parse(localStorage.getItem('all_registered_salons')) || {};
+    if (allSalons[currentCr]) {
+        if (!allSalons[currentCr].manualVipClients) {
+            allSalons[currentCr].manualVipClients = [];
+        }
+        let index = allSalons[currentCr].manualVipClients.indexOf(clientName);
+        if (index > -1) {
+            allSalons[currentCr].manualVipClients.splice(index, 1);
+            alert(`تم إزالة العميل ${clientName} من قائمة VIP.`);
+        } else {
+            allSalons[currentCr].manualVipClients.push(clientName);
+            alert(`تم ترقية العميل ${clientName} إلى قائمة VIP بنجاح! ⭐`);
+        }
+        localStorage.setItem('all_registered_salons', JSON.stringify(allSalons));
+        loadSalonManagementData(currentCr);
+    }
+};
+
+// إرسال عرض مخصص فردي مع اختيار القناة والخصم
+window.sendTargetedRetentionOffer = function(clientName) {
+    const sanitizedId = clientName.replace(/\s+/g, '');
+    const serviceSelect = document.getElementById(`service-select-${sanitizedId}`);
+    const discountSelect = document.getElementById(`discount-select-${sanitizedId}`);
+    const channelSelect = document.getElementById(`channel-select-${sanitizedId}`);
+    
+    if (!serviceSelect || !discountSelect || !channelSelect) return;
+
+    const chosenService = serviceSelect.value;
+    const chosenDiscount = discountSelect.value;
+    const chosenChannel = channelSelect.value === 'whatsapp' ? 'تطبيق واتساب (WhatsApp 📱)' : 'البريد الإلكتروني (Email 📧)';
+
+    alert(`🎉 تم إرسال عرض الاسترجاع للعميل (${clientName}) بنجاح!\n\n• القناة: ${chosenChannel}\n• الخصم: ${chosenDiscount}\n• الخدمة: ${chosenService}`);
+};
+
+// نموذج إضافة عميل جديد لقائمة الزبائن
+if (addManualClientForm) {
+    addManualClientForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const clientName = manualClientNameInput.value.trim();
+        const currentCr = sessionStorage.getItem('current_salon_cr');
+        let allSalons = JSON.parse(localStorage.getItem('all_registered_salons')) || {};
+        
+        if (allSalons[currentCr]) {
+            if (!allSalons[currentCr].manualVipClients) allSalons[currentCr].manualVipClients = [];
+            if (!allSalons[currentCr].manualVipClients.includes(clientName)) {
+                allSalons[currentCr].manualVipClients.push(clientName);
+                localStorage.setItem('all_registered_salons', JSON.stringify(allSalons));
+                alert(`تم حفظ العميل ${clientName} في قائمة زبائن الصالون وتصنيفه كـ VIP بنجاح!`);
+                manualClientNameInput.value = '';
+                loadSalonManagementData(currentCr);
+            } else {
+                alert('هذا العميل مسجل مسبقاً في القائمة.');
+            }
+        }
+    });
+}
+
+// إرسال حملة جماعية لكل الزبائن دفعة واحدة عبر القناة المختارة
+if (broadcastCampaignForm) {
+    broadcastCampaignForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const occasion = broadcastOccasionInput.value.trim();
+        const service = broadcastServiceSelect.value;
+        const discount = broadcastDiscountSelect.value;
+        const channel = broadcastChannelSelect.value === 'whatsapp' ? 'واتساب 📱' : 'البريد الإلكتروني 📧';
+
+        const currentCr = sessionStorage.getItem('current_salon_cr');
+        let allSalons = JSON.parse(localStorage.getItem('all_registered_salons')) || {};
+        const salonName = allSalons[currentCr] ? allSalons[currentCr].name : "الصالون";
+
+        const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
+        let myBookings = savedBookings.filter(b => b.salon === salonName || b.salonId === salonName);
+        let manualClients = allSalons[currentCr] ? (allSalons[currentCr].manualVipClients || []) : [];
+
+        // تجميع كل أسماء الزبائن الفريدة
+        let uniqueClients = new Set();
+        myBookings.forEach(b => { if (b.clientName) uniqueClients.add(b.clientName); });
+        manualClients.forEach(c => uniqueClients.add(c));
+
+        const totalRecipients = uniqueClients.size;
+
+        if (totalRecipients === 0) {
+            alert('لا توجد أي عملاء أو زبائن مسجلين حالياً لإرسال الحملة لهم.');
+            return;
+        }
+
+        alert(`🚀 نجاح الحملة التسويقية الجماعية!\n\n• المناسبة: ${occasion}\n• القناة: ${channel}\n• الخصم: ${discount}\n• الخدمة: ${service}\n• عدد المستلمين: (${totalRecipients}) عميل مسجل دفعة واحدة.`);
+        broadcastOccasionInput.value = '';
+    });
+}
+
 // حفظ الهوية التجارية
 brandSettingsForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -346,6 +553,7 @@ function renderSalonServices(cr, services) {
             allSalons[cr].services = services;
             localStorage.setItem('all_registered_salons', JSON.stringify(allSalons));
             renderSalonServices(cr, services);
+            populateBroadcastServices(services);
         });
 
         li.appendChild(deleteBtn);
@@ -366,6 +574,7 @@ addServiceForm.addEventListener('submit', (e) => {
     localStorage.setItem('all_registered_salons', JSON.stringify(allSalons));
 
     renderSalonServices(cr, allSalons[cr].services);
+    populateBroadcastServices(allSalons[cr].services);
     newServiceNameInput.value = '';
     newServicePriceInput.value = '';
 });
@@ -439,52 +648,6 @@ function loadTenantBookingsAndAnalytics(salonName, salonServices) {
         li.style.cssText = "background: #f9f9f9; margin-bottom: 8px; padding: 10px; border-radius: 6px; border-right: 4px solid #7c4dff;";
         li.innerHTML = `العميل: <strong>${booking.clientName || 'زائر'}</strong> | الخدمة: <strong>${booking.service}</strong> | الموعد: ${booking.date}`;
         tenantBookingsList.appendChild(li);
-    });
-}
-
-// نظام علاقات العملاء VIP CRM
-function renderVipCrmDashboard(salonName, salonServices) {
-    const crmListContainer = document.getElementById('vip-crm-list');
-    if (!crmListContainer) return;
-    
-    crmListContainer.innerHTML = '';
-    const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
-    const myBookings = savedBookings.filter(b => b.salon === salonName || b.salonId === salonName);
-
-    if (myBookings.length === 0) {
-        crmListContainer.innerHTML = '<li style="color: #666;">لا توجد بيانات عملاء كافية حتى الآن.</li>';
-        return;
-    }
-
-    let clientsMap = {};
-    myBookings.forEach(booking => {
-        const clientName = booking.clientName || "عميل زائر";
-        const matchedService = salonServices.find(s => s.name === booking.service);
-        const price = matchedService ? (parseFloat(matchedService.price) || 0) : 10;
-
-        if (!clientsMap[clientName]) {
-            clientsMap[clientName] = { visits: 0, totalSpent: 0, lastBooking: booking.date };
-        }
-        clientsMap[clientName].visits += 1;
-        clientsMap[clientName].totalSpent += price;
-    });
-
-    let clientsArray = Object.keys(clientsMap).map(name => ({ name, ...clientsMap[name] }));
-    clientsArray.sort((a, b) => b.totalSpent - a.totalSpent);
-
-    clientsArray.forEach(client => {
-        const isVip = client.totalSpent >= 20 || client.visits >= 2;
-        const li = document.createElement('li');
-        li.style.cssText = `background: ${isVip ? '#fff8e1' : '#f9f9f9'}; padding: 10px 12px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid ${isVip ? '#ffa000' : '#7c4dff'};`;
-        
-        li.innerHTML = `
-            <div>
-                <strong>${client.name}</strong> ${isVip ? '<span style="background: #ffa000; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 5px;">VIP عميل مميز</span>' : ''}
-                <div style="font-size: 0.85rem; color: #666; margin-top: 3px;">الزيارات: ${client.visits} | إجمالي الإنفاق: ${client.totalSpent} BHD</div>
-            </div>
-            <button onclick="alert('تم إرسال عرض ترويجي خصم 20% للعميل: ${client.name}')" style="background: #1565c0; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">إرسال عرض استرجاع 🎁</button>
-        `;
-        crmListContainer.appendChild(li);
     });
 }
 
