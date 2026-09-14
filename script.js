@@ -50,6 +50,7 @@ const regPhoneInput = document.getElementById('reg-phone');
 const regEmailInput = document.getElementById('reg-email');
 const regNationalityInput = document.getElementById('reg-nationality');
 const regPasswordInput = document.getElementById('reg-password');
+const regRobotCheck = document.getElementById('reg-robot-check'); // عنصر التحقق أنا لست روبوت
 const regSuccess = document.getElementById('reg-success');
 
 const clientLoginForm = document.getElementById('client-login-form');
@@ -199,9 +200,16 @@ function updateClientStats(clientName) {
     clientSpentBadge.textContent = `💳 إجمالي المعاملات: ${totalSpent} BHD`;
 }
 
-// تسجيل حساب جديد مع كلمة المرور
+// تسجيل حساب جديد مع كلمة المرور والتحقق (أنا لست روبوت)
 clientRegisterForm.addEventListener('submit', (e) => {
     e.preventDefault();
+
+    // التحقق من خانة أنا لست روبوت
+    if (!regRobotCheck.checked) {
+        alert('يرجى تأكيد أنك لست روبوت عبر تحديد مربع الاختيار.');
+        return;
+    }
+
     const newClient = {
         name: regNameInput.value.trim(),
         phone: regPhoneInput.value.trim(),

@@ -40,7 +40,7 @@
                 <button type="button" id="show-login-btn" class="btn-secondary" style="background: #e0e0e0; color: #333;">تسجيل الدخول 🔑</button>
             </div>
 
-            <!-- 1. نموذج تسجيل حساب جديد (مع كلمة مرور) -->
+            <!-- 1. نموذج تسجيل حساب جديد (مع كلمة مرور وتحقق أنا لست روبوت) -->
             <div id="client-auth-box">
                 <p style="color: #555; margin-bottom: 1rem;">أنشئ حسابك المحمي بكلمة مرور لتستفيد من نقاط الولاء وسجل المعاملات.</p>
                 <form id="client-register-form">
@@ -63,6 +63,11 @@
                     <div class="form-group">
                         <label>كلمة المرور:</label>
                         <input type="password" id="reg-password" required placeholder="أدخل كلمة مرور قوية">
+                    </div>
+                    <!-- إضافة خانة أنا لست روبوت -->
+                    <div class="form-group" style="background: #f1f3f5; padding: 10px; border-radius: 6px; display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="reg-robot-check" required style="width: 20px; height: 20px; cursor: pointer;">
+                        <label for="reg-robot-check" style="cursor: pointer; margin: 0; font-size: 0.95rem; color: #333;">أنا لست روبوت (أكد أنك مستخدم حقيقي) 🤖✔️</label>
                     </div>
                     <button type="submit" class="btn-submit">إنشاء الحساب الآمن ✨</button>
                 </form>
@@ -89,7 +94,7 @@
                 <div id="login-error" style="display:none; color: #ff5252; margin-top: 10px; font-weight: bold;"></div>
             </div>
 
-            <!-- 3. نموذج محاكاة استعادة كلمة المرور عبر الإيميل (جديد) -->
+            <!-- 3. نموذج محاكاة استعادة كلمة المرور عبر الإيميل -->
             <div id="client-forgot-box" style="display: none; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
                 <h3 style="margin-top: 0; color: #333;">استعادة كلمة المرور 📩</h3>
                 <p style="color: #555; font-size: 0.9rem;">أدخل بريدك الإلكتروني المسجل لنرسل لك رابط إعادة تعيين كلمة المرور (محاكاة النظام الفعلي).</p>
