@@ -26,23 +26,23 @@
     <!-- القسم الرئيسي -->
     <section class="hero" id="home">
         <h1>اكتشف أقرب صالونات التجميل واجز موعدك بالذكاء الاصطناعي</h1>
-        <p>سجل معنا أو سجل دخولك لحفظ النقاط، تتبع سجل معاملاتك، واستمتع بعروض حصرية.</p>
+        <p>سجل معنا أو سجل دخولك الآمن لحفظ النقاط، تتبع سجل معاملاتك، واستمتع بعروض حصرية.</p>
     </section>
 
-    <!-- قسم بوابة العملاء (تسجيل جديد أو تسجيل دخول) -->
+    <!-- قسم بوابة العملاء (تسجيل، تسجيل دخول، أو نسيت كلمة المرور) -->
     <section class="container" id="client-portal" style="background: #f7f9fc; border: 2px dashed #7c4dff;">
-        <h2>🔐 بوابة العملاء والولاء</h2>
+        <h2>🔐 بوابة العملاء والولاء الآمنة</h2>
         
         <div id="auth-container">
-            <!-- أزرار التبديل بين التسجيل وتسجيل الدخول -->
-            <div id="auth-tabs" style="margin-bottom: 15px; display: flex; gap: 10px;">
+            <!-- أزرار التبديل -->
+            <div id="auth-tabs" style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
                 <button type="button" id="show-register-btn" class="btn-secondary" style="background: #7c4dff; color: white;">تسجيل حساب جديد 🚀</button>
-                <button type="button" id="show-login-btn" class="btn-secondary" style="background: #e0e0e0; color: #333;">تسجيل الدخول لحسابي 🔑</button>
+                <button type="button" id="show-login-btn" class="btn-secondary" style="background: #e0e0e0; color: #333;">تسجيل الدخول 🔑</button>
             </div>
 
-            <!-- 1. نموذج تسجيل حساب جديد -->
+            <!-- 1. نموذج تسجيل حساب جديد (مع كلمة مرور) -->
             <div id="client-auth-box">
-                <p style="color: #555; margin-bottom: 1rem;">سجل بياناتك مرة واحدة لتستفيد من نقاط الولاء وتاريخ المعاملات.</p>
+                <p style="color: #555; margin-bottom: 1rem;">أنشئ حسابك المحمي بكلمة مرور لتستفيد من نقاط الولاء وسجل المعاملات.</p>
                 <form id="client-register-form">
                     <div class="form-group">
                         <label>الاسم الكامل:</label>
@@ -60,25 +60,51 @@
                         <label>الجنسية:</label>
                         <input type="text" id="reg-nationality" required placeholder="مثال: بحرينية">
                     </div>
-                    <button type="submit" class="btn-submit">إنشاء حساب جديد ✨</button>
+                    <div class="form-group">
+                        <label>كلمة المرور:</label>
+                        <input type="password" id="reg-password" required placeholder="أدخل كلمة مرور قوية">
+                    </div>
+                    <button type="submit" class="btn-submit">إنشاء الحساب الآمن ✨</button>
                 </form>
                 <div id="reg-success" style="display:none; color: #2e7d32; margin-top: 10px; font-weight: bold;"></div>
             </div>
 
-            <!-- 2. نموذج تسجيل الدخول السريع (جديد) -->
+            <!-- 2. نموذج تسجيل الدخول (هاتف + كلمة مرور) -->
             <div id="client-login-box" style="display: none;">
-                <p style="color: #555; margin-bottom: 1rem;">أدخل رقم هاتفك المسجل مسبقاً للدخول الفوري إلى حسابك وسجلك.</p>
+                <p style="color: #555; margin-bottom: 1rem;">أدخل رقم هاتفك وكلمة المرور للوصول إلى حسابك.</p>
                 <form id="client-login-form">
                     <div class="form-group">
-                        <label>رقم الهاتف المسجل:</label>
+                        <label>رقم الهاتف:</label>
                         <input type="tel" id="login-phone" required placeholder="مثال: +973 39000000">
+                    </div>
+                    <div class="form-group">
+                        <label>كلمة المرور:</label>
+                        <input type="password" id="login-password" required placeholder="كلمة المرور الخاصة بك">
                     </div>
                     <button type="submit" class="btn-submit" style="background: #2e7d32;">تسجيل الدخول 🔓</button>
                 </form>
+                <div style="margin-top: 10px;">
+                    <a href="#" id="forgot-password-link" style="color: #7c4dff; font-size: 0.9rem; text-decoration: underline;">هل نسيت كلمة المرور؟</a>
+                </div>
                 <div id="login-error" style="display:none; color: #ff5252; margin-top: 10px; font-weight: bold;"></div>
             </div>
 
-            <!-- 3. لوحة الملف الشخصي للعميل (تظهر بعد الدخول) -->
+            <!-- 3. نموذج محاكاة استعادة كلمة المرور عبر الإيميل (جديد) -->
+            <div id="client-forgot-box" style="display: none; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+                <h3 style="margin-top: 0; color: #333;">استعادة كلمة المرور 📩</h3>
+                <p style="color: #555; font-size: 0.9rem;">أدخل بريدك الإلكتروني المسجل لنرسل لك رابط إعادة تعيين كلمة المرور (محاكاة النظام الفعلي).</p>
+                <form id="client-forgot-form">
+                    <div class="form-group">
+                        <label>البريد الإلكتروني:</label>
+                        <input type="email" id="forgot-email" required placeholder="name@example.com">
+                    </div>
+                    <button type="submit" class="btn-submit" style="background: #ffa000;">إرسال رابط إعادة التعيين 🚀</button>
+                </form>
+                <button type="button" id="back-to-login-btn" style="margin-top: 10px; background: none; border: none; color: #666; cursor: pointer; text-decoration: underline;">العودة لتسجيل الدخول</button>
+                <div id="forgot-success" style="display:none; color: #2e7d32; margin-top: 10px; font-weight: bold;"></div>
+            </div>
+
+            <!-- 4. لوحة الملف الشخصي للعميل (تظهر بعد الدخول) -->
             <div id="client-dashboard-box" style="display: none;">
                 <div style="background: white; padding: 15px; border-radius: 8px; border-right: 4px solid #7c4dff;">
                     <h3 id="welcome-client-title" style="margin-top: 0; color: #333;">أهلاً بك، </h3>
