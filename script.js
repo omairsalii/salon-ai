@@ -42,7 +42,13 @@ locateBtn.addEventListener('click', function() {
     );
 });
 
-// عناصر DOM الخاصة بالتسجيل، الحجز، والنصائح
+// عناصر DOM الخاصة بالبوابة والتسجيل ودخول العملاء
+const showRegisterBtn = document.getElementById('show-register-btn');
+const showLoginBtn = document.getElementById('show-login-btn');
+const clientAuthBox = document.getElementById('client-auth-box');
+const clientLoginBox = document.getElementById('client-login-box');
+const clientDashboardBox = document.getElementById('client-dashboard-box');
+
 const clientRegisterForm = document.getElementById('client-register-form');
 const regNameInput = document.getElementById('reg-name');
 const regPhoneInput = document.getElementById('reg-phone');
@@ -50,8 +56,10 @@ const regEmailInput = document.getElementById('reg-email');
 const regNationalityInput = document.getElementById('reg-nationality');
 const regSuccess = document.getElementById('reg-success');
 
-const clientAuthBox = document.getElementById('client-auth-box');
-const clientDashboardBox = document.getElementById('client-dashboard-box');
+const clientLoginForm = document.getElementById('client-login-form');
+const loginPhoneInput = document.getElementById('login-phone');
+const loginError = document.getElementById('login-error');
+
 const welcomeClientTitle = document.getElementById('welcome-client-title');
 const clientInfoDetails = document.getElementById('client-info-details');
 const clientPointsBadge = document.getElementById('client-points-badge');
@@ -74,7 +82,26 @@ const displaySalonLogo = document.getElementById('display-salon-logo');
 const displaySalonName = document.getElementById('display-salon-name');
 const displaySalonDetails = document.getElementById('display-salon-details');
 
-// ضبط الحد الأدنى لتاريخ الحجز لمنع التواريخ الماضية
+// التبديل بين نموذج التسجيل وتسجيل الدخول
+showRegisterBtn.addEventListener('click', () => {
+    clientAuthBox.style.display = 'block';
+    clientLoginBox.style.display = 'none';
+    showRegisterBtn.style.background = '#7c4dff';
+    showRegisterBtn.style.color = 'white';
+    showLoginBtn.style.background = '#e0e0e0';
+    showLoginBtn.style.color = '#333';
+});
+
+showLoginBtn.addEventListener('click', () => {
+    clientAuthBox.style.display = 'none';
+    clientLoginBox.style.display = 'block';
+    showLoginBtn.style.background = '#7c4dff';
+    showLoginBtn.style.color = 'white';
+    showRegisterBtn.style.background = '#e0e0e0';
+    showRegisterBtn.style.color = '#333';
+});
+
+// ضبط الحد الأدنى لتاريخ الحجز
 function setMinDateTime() {
     const now = new Date();
     const year = now.getFullYear();
@@ -90,29 +117,33 @@ setMinDateTime();
 
 let editingIndex = null;
 
-// إدارة جلسة العميل المسجل في الـ localStorage
+// التحقق من جلسة العميل المسجل وحفظ قاعدة بيانات العملاء المسجلين
 function checkClientSession() {
     const loggedInClient = JSON.parse(localStorage.getItem('current_logged_client'));
     if (loggedInClient) {
+        document.getElementById('auth-tabs').style.display = 'none';
         clientAuthBox.style.display = 'none';
+        clientLoginBox.style.display = 'none';
         clientDashboardBox.style.display = 'block';
+
         welcomeClientTitle.textContent = `أهلاً بك، ${loggedInClient.name} ✨`;
         clientInfoDetails.innerHTML = `الهاتف: ${loggedInClient.phone} | البريد: ${loggedInClient.email} | الجنسية: ${loggedInClient.nationality}`;
         
-        // تعبئة حقول الحجز تلقائياً للعميل المسجل
         if (clientNameInput) clientNameInput.value = loggedInClient.name;
         if (clientPhoneInput) clientPhoneInput.value = loggedInClient.phone;
 
         updateClientStats(loggedInClient.name);
     } else {
+        document.getElementById('auth-tabs').style.display = 'flex';
         clientAuthBox.style.display = 'block';
+        clientLoginBox.style.display = 'none';
         clientDashboardBox.style.display = 'none';
         if (clientNameInput) clientNameInput.value = '';
         if (clientPhoneInput) clientPhoneInput.value = '';
     }
 }
 
-// حساب النقاط والمعاملات للعميل المسجل
+// حساب النقاط والمعاملات
 function updateClientStats(clientName) {
     const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
     const salonsData = JSON.parse(localStorage.getItem('salons_custom_data')) || {};
@@ -129,12 +160,12 @@ function updateClientStats(clientName) {
         }
     });
 
-    const points = clientBookingsCount * 50; // كل حجز يمنح 50 نقطة ولاء
+    const points = clientBookingsCount * 50;
     clientPointsBadge.textContent = `⭐ رصيد النقاط: ${points} نقطة`;
     clientSpentBadge.textContent = `💳 إجمالي المعاملات: ${totalSpent} BHD`;
 }
 
-// تنفيذ التسجيل الخفيف
+// تسجيل حساب جديد وحفظه في قائمة عملاء النظام
 clientRegisterForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const newClient = {
@@ -144,6 +175,18 @@ clientRegisterForm.addEventListener('submit', (e) => {
         nationality: regNationalityInput.value.trim()
     };
 
+    // حفظ في قاعدة عملاء النظام عامة
+    let allClients = JSON.parse(localStorage.getItem('salon_registered_clients')) || [];
+    // التحقق إن كان الهاتف مسجلاً مسبقاً
+    const existingIndex = allClients.findIndex(c => c.phone === newClient.phone);
+    if (existingIndex >= 0) {
+        allClients[existingIndex] = newClient; // تحديث
+    } else {
+        allClients.push(newClient);
+    }
+    localStorage.setItem('salon_registered_clients', JSON.stringify(allClients));
+
+    // تعيين كجلسة حالية
     localStorage.setItem('current_logged_client', JSON.stringify(newClient));
     regSuccess.textContent = 'تم تسجيل حسابك بنجاح وأصبحت عضواً معنا! 🎉';
     regSuccess.style.display = 'block';
@@ -155,6 +198,24 @@ clientRegisterForm.addEventListener('submit', (e) => {
     }, 1500);
 });
 
+// معالجة تسجيل الدخول السريع برقم الهاتف
+clientLoginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const searchPhone = loginPhoneInput.value.trim();
+    const allClients = JSON.parse(localStorage.getItem('salon_registered_clients')) || [];
+
+    const foundClient = allClients.find(c => c.phone === searchPhone);
+    if (foundClient) {
+        localStorage.setItem('current_logged_client', JSON.stringify(foundClient));
+        loginError.style.display = 'none';
+        checkClientSession();
+        loadBookings();
+    } else {
+        loginError.textContent = 'رقم الهاتف غير مسجل لدينا. يرجى إنشاء حساب جديد أولاً.';
+        loginError.style.display = 'block';
+    }
+});
+
 // تسجيل الخروج
 if (clientLogoutBtn) {
     clientLogoutBtn.addEventListener('click', () => {
@@ -164,7 +225,7 @@ if (clientLogoutBtn) {
     });
 }
 
-// قاعدة بيانات آمنة للنصائح العامة
+// نصائح الخبراء
 const generalTips = {
     "قص شعر وتصفيف": "💡 نصيحة عامة: يُنصح بغسل الشعر قبل موعد القص بـ 24 ساعة ليكون في أفضل حالة للتصفيف.",
     "صبغة الشعر وتلوينه": "💡 نصيحة عامة: يفضل عدم غسل الشعر بالماء الساخن لمدة 48 ساعة بعد الصبغة للحفاظ على ثبات اللون.",
@@ -184,7 +245,7 @@ serviceSelect.addEventListener('change', function() {
     }
 });
 
-// تحديث الخدمات وبطاقة الصالون ديناميكياً
+// تحديث الخدمات ديناميكياً
 function updateSalonProfileAndServices() {
     const selectedSalon = salonSelect.value;
     serviceSelect.innerHTML = '<option value="">-- اختر الخدمة المطلوبة --</option>';
@@ -218,13 +279,12 @@ function updateSalonProfileAndServices() {
 
 salonSelect.addEventListener('change', updateSalonProfileAndServices);
 
-// عرض الحجوزات (إذا كان مسجلاً يعرض حجوزاته الخاصة فقط، أو يظهر الكل للزائر)
+// عرض الحجوزات
 function loadBookings() {
     bookingsList.innerHTML = '';
     const savedBookings = JSON.parse(localStorage.getItem('salon_bookings')) || [];
     const loggedInClient = JSON.parse(localStorage.getItem('current_logged_client'));
 
-    // تصفية الحجوزات بناءً على العميل المسجل إن وجدت جلسة نشطة
     const displayBookings = loggedInClient ? savedBookings.filter(b => b.clientName === loggedInClient.name) : savedBookings;
     
     if (displayBookings.length === 0) {
@@ -293,7 +353,7 @@ function removeBooking(index) {
     if (loggedIn) updateClientStats(loggedIn.name);
 }
 
-// إرسال الحجز
+// الحجز
 bookingForm.addEventListener('submit', function(e) {
     e.preventDefault(); 
     const clientName = clientNameInput ? clientNameInput.value.trim() : "زائر";
@@ -340,6 +400,6 @@ bookingForm.addEventListener('submit', function(e) {
     }
 });
 
-// تهيئة أولية عند تشغيل الصفحة
+// تهيئة أولية
 checkClientSession();
 loadBookings();
