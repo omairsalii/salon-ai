@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 // POST: إنشاء حجز جديد مع التحقق من الخدمات والأسعار
-// ملاحظة: لا يوجد بعد تحقق من هوية العميل (customer auth) — القيمة الافتراضية
-// 'guest-customer' مؤقتة بانتظار نظام حسابات العملاء.
+// حجز الضيف (بدون تسجيل دخول) مدعوم عبر customerName + customerPhone: نبحث
+// عن عميل بنفس الجوال لدى هذا الصالون، وإذا ما وُجد ننشئ سجل Customer جديد له
+// — هذا يخليه يظهر فورًا في CRM صاحب الصالون بدل ما يكون "ضيف" منفصل ومخفي.
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tenantId, customerId, serviceId, employeeId, startTime } = body;
+    const { tenantId, customerId, customerName, customerPhone, serviceId, employeeId, startTime } = body;
 
     // التحقق من الحقول الأساسية المطلوبة
     if (!tenantId || !serviceId || !startTime) {
@@ -22,27 +23,40 @@ export async function POST(request: Request) {
       where: { id: serviceId },
     });
 
-    if (!service) {
+    if (!service || service.tenantId !== tenantId) {
       return NextResponse.json(
         { success: false, error: 'Service not found' },
         { status: 404 }
       );
     }
 
+    // إيجاد أو إنشاء سجل العميل عند الحجز كضيف بالاسم والجوال
+    let resolvedCustomerId: string | null = customerId || null;
+    if (!resolvedCustomerId && customerName && customerPhone) {
+      const existingCustomer = await prisma.customer.findFirst({
+        where: { tenantId, phone: customerPhone },
+      });
+      const customer =
+        existingCustomer ||
+        (await prisma.customer.create({
+          data: { tenantId, name: customerName, phone: customerPhone },
+        }));
+      resolvedCustomerId = customer.id;
+    }
+
     const basePrice = service.basePrice ? Number(service.basePrice) : 0;
     const depositAmount = basePrice * 0.3; // افتراض عربون بقيمة 30% كسياسة أولية للحجز
 
-    // حساب وقت النهاية الافتراضي (مثلاً 60 دقيقة إذا لم توجد مدة محددة)
+    // حساب وقت النهاية بحسب مدة الخدمة (أو 60 دقيقة افتراضياً إذا لم تُحدد)
     const startDateTime = new Date(startTime);
-    const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+    const durationMinutes = service.baseDurationMinutes || 60;
+    const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60 * 1000);
 
     // إنشاء الحجز الجديد في قاعدة البيانات
-    // ملاحظة: customerId أصبح الآن FK حقيقي لجدول customers (nullable) — لا نضع
-    // قيمة نصية وهمية بدل حجز الضيف، بل نتركه فارغًا حتى يتوفر نظام حسابات عملاء.
     const newAppointment = await prisma.appointment.create({
       data: {
         tenantId,
-        customerId: customerId || null,
+        customerId: resolvedCustomerId,
         employeeId: employeeId || null,
         serviceId,
         status: 'PENDING_DEPOSIT', // حالة الحجز بانتظار دفع العربون

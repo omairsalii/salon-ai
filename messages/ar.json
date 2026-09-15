@@ -98,5 +98,21 @@
     "distance": "المسافة",
     "rating": "التقييم",
     "bookNow": "عرض الخدمات والحجز"
+  },
+  "SalonDetail": {
+    "services": "الخدمات المتاحة",
+    "noServices": "لا توجد خدمات متاحة حالياً لدى هذا الصالون.",
+    "priceLabel": "السعر",
+    "durationLabel": "المدة",
+    "bookThisService": "احجز هذه الخدمة",
+    "bookingFormTitle": "أكمل بيانات الحجز",
+    "yourName": "اسمك",
+    "yourPhone": "رقم جوالك",
+    "dateTime": "التاريخ والوقت",
+    "confirmBooking": "تأكيد الحجز",
+    "submitting": "جاري الحجز...",
+    "bookingSuccess": "تم حجز موعدك بنجاح! سيتواصل معك الصالون لتأكيد الحجز.",
+    "depositNote": "هذا الحجز يتطلب دفع عربون عند التأكيد حسب سياسة الصالون.",
+    "close": "إغلاق"
   }
 }

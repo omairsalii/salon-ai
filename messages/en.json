@@ -98,5 +98,21 @@
     "distance": "Distance",
     "rating": "Rating",
     "bookNow": "View services & book"
+  },
+  "SalonDetail": {
+    "services": "Available Services",
+    "noServices": "This salon has no services listed yet.",
+    "priceLabel": "Price",
+    "durationLabel": "Duration",
+    "bookThisService": "Book this service",
+    "bookingFormTitle": "Complete your booking",
+    "yourName": "Your name",
+    "yourPhone": "Your phone number",
+    "dateTime": "Date & time",
+    "confirmBooking": "Confirm Booking",
+    "submitting": "Booking...",
+    "bookingSuccess": "Your appointment was booked! The salon will contact you to confirm.",
+    "depositNote": "This booking requires a deposit upon confirmation, per the salon's policy.",
+    "close": "Close"
   }
 }
