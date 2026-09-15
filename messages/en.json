@@ -1,6 +1,98 @@
 {
-    "Index": {
-      "title": "Welcome to Salon AI",
-      "description": "High-performance geo-spatial marketplace for the GCC beauty sector"
-    }
+  "Index": {
+    "title": "Welcome to Salon AI",
+    "description": "High-performance geo-spatial marketplace for the GCC beauty sector"
+  },
+  "Dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome to your salon management system",
+    "subtitle": "Overview of salon performance and daily bookings",
+    "statusOpen": "Salon is currently open",
+    "overview": "Overview",
+    "appointments": "Appointments & Bookings",
+    "services": "Services & Pricing",
+    "staff": "Staff",
+    "settings": "Settings",
+    "backToStore": "Back to storefront",
+    "todayBookings": "Today's Bookings",
+    "expectedRevenue": "Expected Revenue",
+    "recentBookings": "Recent Bookings",
+    "customerRating": "Customer Rating",
+    "clientName": "Client Name",
+    "service": "Service",
+    "time": "Time",
+    "assignedStaff": "Assigned Staff",
+    "status": "Status",
+    "confirmed": "Confirmed",
+    "completed": "Completed",
+    "pending": "Pending",
+    "cancelled": "Cancelled"
+  },
+  "Bookings": {
+    "title": "Manage Appointments",
+    "newBooking": "New Booking",
+    "clientName": "Client Name",
+    "service": "Service",
+    "time": "Time",
+    "status": "Status",
+    "confirmed": "Confirmed",
+    "pending": "Pending",
+    "cancelled": "Cancelled",
+    "completed": "Completed"
+  },
+  "Common": {
+    "appName": "Salon AI",
+    "currency": "SAR",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "Clients": {
+    "title": "Manage Clients",
+    "newClient": "New Client",
+    "name": "Client Name",
+    "phone": "Phone",
+    "totalVisits": "Total Visits",
+    "lastVisit": "Last Visit",
+    "actions": "Actions"
+  },
+  "Services": {
+    "title": "Manage Services & Pricing",
+    "newService": "Add New Service",
+    "serviceName": "Service Name",
+    "price": "Price",
+    "duration": "Duration",
+    "category": "Category",
+    "actions": "Actions"
+  },
+  "Staff": {
+    "title": "Manage Staff",
+    "newStaff": "Add New Staff",
+    "name": "Staff Name",
+    "role": "Role",
+    "phone": "Phone",
+    "status": "Status",
+    "active": "Active",
+    "onLeave": "On Leave",
+    "actions": "Actions"
+  },
+  "Settings": {
+    "title": "Salon Settings",
+    "salonName": "Salon Name",
+    "city": "City",
+    "workingHours": "Working Hours",
+    "saveChanges": "Save Changes"
+  },
+  "Marketplace": {
+    "searchTitle": "Discover and book the best salons with ease",
+    "searchSubtitle": "Your smart platform for finding the nearest beauty and barber salon in the GCC",
+    "servicePlaceholder": "Haircut, skincare, makeup...",
+    "cityPlaceholder": "Riyadh, Dubai, Manama, Kuwait...",
+    "searchButton": "Search",
+    "nearbySalons": "Featured salons near you",
+    "distance": "Distance",
+    "rating": "Rating",
+    "bookNow": "View services & book"
   }
+}
