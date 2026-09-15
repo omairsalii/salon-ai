@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { hashPassword } from '@/lib/password';
+import { createSession } from '@/lib/session';
 
 // جلب الصالونات (المستأجرين)، مع دعم اختياري للبحث الجغرافي عبر PostGIS
 export async function GET(request: Request) {
@@ -70,15 +72,13 @@ export async function GET(request: Request) {
   }
 }
 
-// إضافة صالون (مستأجر) جديد عبر نموذج التسجيل الذاتي في /[locale]/salons/new.
-// ملاحظة أمنية: هذا المسار مفتوح للجميع بدون تحقق — أي زائر يقدر يضيف صالونات
-// وهمية بلا حدود (spam). قبل الإطلاق الفعلي يحتاج قرار منتج: تسجيل ذاتي مع
-// تحقق (بريد/هاتف) + حدّ معدل الطلبات (rate limiting)، أو تحويله لأداة داخلية
-// محمية بمصادقة إدارية (استخدم requireAdmin من lib/auth.ts في هذه الحالة).
+// تسجيل صالون جديد + إنشاء حساب مالكه، عبر نموذج /[locale]/salons/new.
+// ملاحظة أمنية متبقية: ما فيه تحقق من البريد الإلكتروني بعد (verification) —
+// أي شخص بإيميل صحيح الصيغة يقدر يسجل. هذا قرار مؤجل عن قصد لحين الحاجة له.
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, city, addressText, lat, lng } = body;
+    const { name, city, addressText, lat, lng, ownerName, email, password } = body;
 
     if (!name || !city) {
       return NextResponse.json(
@@ -87,17 +87,58 @@ export async function POST(request: Request) {
       );
     }
 
-    const newSalon = await prisma.tenant.create({
-      data: {
-        name,
-        city,
-        addressText: addressText || null,
-        latitude: lat ? parseFloat(lat) : null,
-        longitude: lng ? parseFloat(lng) : null,
-      },
+    if (!ownerName || !email || !password) {
+      return NextResponse.json(
+        { success: false, error: 'اسم المالك والبريد الإلكتروني وكلمة المرور مطلوبة' },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 8) {
+      return NextResponse.json(
+        { success: false, error: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' },
+        { status: 400 }
+      );
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const existingOwner = await prisma.owner.findUnique({ where: { email: normalizedEmail } });
+    if (existingOwner) {
+      return NextResponse.json(
+        { success: false, error: 'يوجد حساب مسجل بهذا البريد الإلكتروني بالفعل' },
+        { status: 409 }
+      );
+    }
+
+    const passwordHash = await hashPassword(password);
+
+    const { tenant, owner } = await prisma.$transaction(async (tx) => {
+      const tenant = await tx.tenant.create({
+        data: {
+          name,
+          city,
+          addressText: addressText || null,
+          latitude: lat ? parseFloat(lat) : null,
+          longitude: lng ? parseFloat(lng) : null,
+        },
+      });
+
+      const owner = await tx.owner.create({
+        data: {
+          tenantId: tenant.id,
+          name: ownerName,
+          email: normalizedEmail,
+          passwordHash,
+        },
+      });
+
+      return { tenant, owner };
     });
 
-    return NextResponse.json({ success: true, data: newSalon }, { status: 201 });
+    await createSession({ ownerId: owner.id, tenantId: tenant.id, email: owner.email });
+
+    return NextResponse.json({ success: true, data: tenant }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating salon:', error);
     return NextResponse.json(

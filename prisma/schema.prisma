@@ -20,14 +20,60 @@ model Tenant {
   longitude       Decimal?      @db.Decimal(11, 8)
   addressText     String?       @map("address_text")
   bookingPolicy   String?       @default("DEPOSIT_REQUIRED") @map("booking_policy") @db.VarChar(50)
+  workingHoursText String?      @map("working_hours_text")
   createdAt       DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt       DateTime?     @updatedAt @map("updated_at") @db.Timestamp(6)
 
+  owner           Owner?
+  staff           Staff[]
+  customers       Customer[]
   services        Service[]
   appointments    Appointment[]
   customerPackages CustomerPackage[]
 
   @@map("tenants")
+}
+
+model Owner {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @unique @map("tenant_id") @db.Uuid
+  name         String   @db.VarChar(255)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("owners")
+}
+
+model Staff {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String        @map("tenant_id") @db.Uuid
+  name         String        @db.VarChar(255)
+  role         String?       @db.VarChar(100)
+  phone        String?       @db.VarChar(50)
+  status       String        @default("ACTIVE") @db.VarChar(50)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  appointments Appointment[]
+
+  @@map("staff")
+}
+
+model Customer {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String            @map("tenant_id") @db.Uuid
+  name             String            @db.VarChar(255)
+  phone            String?           @db.VarChar(50)
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
+
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  appointments     Appointment[]
+  customerPackages CustomerPackage[]
+
+  @@map("customers")
 }
 
 model Service {
@@ -36,6 +82,7 @@ model Service {
   name              Json?              @db.JsonB
   description       Json?              @db.JsonB
   basePrice         Decimal?           @map("base_price") @db.Decimal(10, 2)
+  baseDurationMinutes Int?             @map("base_duration_minutes")
   pricingModel      String?            @map("pricing_model") @db.VarChar(50)
   visibilitySetting String?            @map("visibility_setting") @db.VarChar(50)
   createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
@@ -89,6 +136,8 @@ model Appointment {
 
   tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   service       Service?  @relation(fields: [serviceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  employee      Staff?    @relation(fields: [employeeId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@map("appointments")
 }
@@ -108,6 +157,7 @@ model CustomerPackage {
 
   tenant            Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   service           Service?  @relation(fields: [serviceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@map("customer_packages")
 }

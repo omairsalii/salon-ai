@@ -1,56 +1,176 @@
-"use client";
+'use client';
 
+import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
+
+interface ServiceRow {
+  id: string;
+  name: { ar?: string; en?: string } | null;
+  basePrice: string | null;
+  baseDurationMinutes: number | null;
+}
 
 export default function ServicesPage() {
   const t = useTranslations('Services');
   const common = useTranslations('Common');
+  const params = useParams();
+  const locale = typeof params.locale === 'string' ? params.locale : 'ar';
 
-  // بيانات تجريبية للخدمات
-  const servicesList = [
-    { id: 1, name: 'قص وتصفيف شعر فخم', price: '150 ر.س', duration: '45 دقيقة', category: 'الشعر' },
-    { id: 2, name: 'عناية عميقة بالبشرة', price: '350 ر.س', duration: '60 دقيقة', category: 'البشرة' },
-    { id: 3, name: 'منيكير وبديكير ملكي', price: '200 ر.س', duration: '50 دقيقة', category: 'الأظافر' },
-  ];
+  const [services, setServices] = useState<ServiceRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [nameAr, setNameAr] = useState('');
+  const [nameEn, setNameEn] = useState('');
+  const [price, setPrice] = useState('');
+  const [duration, setDuration] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    const res = await fetch('/api/dashboard/services');
+    const data = await res.json();
+    if (data.success) setServices(data.data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setNameAr('');
+    setNameEn('');
+    setPrice('');
+    setDuration('');
+    setError('');
+  };
+
+  const openNew = () => {
+    resetForm();
+    setShowForm(true);
+  };
+
+  const openEdit = (s: ServiceRow) => {
+    setEditingId(s.id);
+    setNameAr(s.name?.ar || '');
+    setNameEn(s.name?.en || '');
+    setPrice(s.basePrice || '');
+    setDuration(s.baseDurationMinutes?.toString() || '');
+    setShowForm(true);
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+
+    try {
+      const url = editingId ? `/api/dashboard/services/${editingId}` : '/api/dashboard/services';
+      const method = editingId ? 'PATCH' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nameAr, nameEn, basePrice: price, baseDurationMinutes: duration }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل الحفظ');
+
+      setShowForm(false);
+      resetForm();
+      load();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('حذف هذه الخدمة؟')) return;
+    await fetch(`/api/dashboard/services/${id}`, { method: 'DELETE' });
+    load();
+  };
+
+  const displayName = (s: ServiceRow) => (locale === 'ar' ? s.name?.ar : s.name?.en) || s.name?.ar || s.name?.en || '—';
 
   return (
-    <div className="p-6">
+    <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-stone-900">{t('title')}</h1>
-        <button className="bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition font-medium text-sm">
-          {t('newService')}
+        <button
+          onClick={openNew}
+          className="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-purple-700 transition"
+        >
+          + {t('newService')}
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
-        <table className="w-full text-right border-collapse">
-          <thead className="bg-stone-50 border-b border-stone-200 text-stone-600 text-sm">
-            <tr>
-              <th className="p-4">{t('serviceName')}</th>
-              <th className="p-4">{t('category')}</th>
-              <th className="p-4">{t('price')}</th>
-              <th className="p-4">{t('duration')}</th>
-              <th className="p-4">{t('actions')}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-stone-100 text-sm">
-            {servicesList.map((service) => (
-              <tr key={service.id} className="hover:bg-stone-50/50 transition">
-                <td className="p-4 font-medium text-stone-900">{service.name}</td>
-                <td className="p-4">
-                  <span className="bg-stone-100 text-stone-700 px-2.5 py-1 rounded-full text-xs font-medium">
-                    {service.category}
-                  </span>
-                </td>
-                <td className="p-4 font-semibold text-purple-600">{service.price}</td>
-                <td className="p-4 text-stone-600">{service.duration}</td>
-                <td className="p-4">
-                  <button className="text-purple-600 hover:underline font-medium">{common('edit')}</button>
-                </td>
+      {showForm && (
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 mb-6 space-y-4">
+          {error && <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">اسم الخدمة (عربي)</label>
+              <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} required className="w-full px-3 py-2 border rounded-md text-black" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">Service name (English)</label>
+              <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} required dir="ltr" className="w-full px-3 py-2 border rounded-md text-black" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t('price')} ({common('currency')})</label>
+              <input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full px-3 py-2 border rounded-md text-black" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t('duration')} (دقيقة)</label>
+              <input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} className="w-full px-3 py-2 border rounded-md text-black" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="submit" disabled={saving} className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm disabled:opacity-50">
+              {saving ? '...' : common('save')}
+            </button>
+            <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className="bg-stone-100 text-stone-700 px-4 py-2 rounded-md text-sm">
+              {common('cancel')}
+            </button>
+          </div>
+        </form>
+      )}
+
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-x-auto">
+        {loading ? (
+          <p className="p-6 text-center text-stone-400 text-sm">...</p>
+        ) : services.length === 0 ? (
+          <p className="p-6 text-center text-stone-400 text-sm">لا توجد خدمات بعد</p>
+        ) : (
+          <table className="w-full text-right text-sm text-stone-600">
+            <thead className="bg-stone-50 text-stone-700 uppercase text-xs">
+              <tr>
+                <th className="p-3">{t('serviceName')}</th>
+                <th className="p-3">{t('price')}</th>
+                <th className="p-3">{t('duration')}</th>
+                <th className="p-3">{t('actions')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {services.map((s) => (
+                <tr key={s.id} className="border-b border-stone-100">
+                  <td className="p-3 font-medium text-stone-900">{displayName(s)}</td>
+                  <td className="p-3">{s.basePrice ? `${s.basePrice} ${common('currency')}` : '—'}</td>
+                  <td className="p-3">{s.baseDurationMinutes ? `${s.baseDurationMinutes} دقيقة` : '—'}</td>
+                  <td className="p-3 flex gap-3">
+                    <button onClick={() => openEdit(s)} className="text-purple-600 hover:underline">{common('edit')}</button>
+                    <button onClick={() => handleDelete(s.id)} className="text-red-500 hover:underline">{common('delete')}</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

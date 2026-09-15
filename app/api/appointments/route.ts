@@ -37,10 +37,12 @@ export async function POST(request: Request) {
     const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
 
     // إنشاء الحجز الجديد في قاعدة البيانات
+    // ملاحظة: customerId أصبح الآن FK حقيقي لجدول customers (nullable) — لا نضع
+    // قيمة نصية وهمية بدل حجز الضيف، بل نتركه فارغًا حتى يتوفر نظام حسابات عملاء.
     const newAppointment = await prisma.appointment.create({
       data: {
         tenantId,
-        customerId: customerId || 'guest-customer',
+        customerId: customerId || null,
         employeeId: employeeId || null,
         serviceId,
         status: 'PENDING_DEPOSIT', // حالة الحجز بانتظار دفع العربون
