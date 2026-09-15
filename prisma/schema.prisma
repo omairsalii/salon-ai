@@ -10,6 +10,7 @@ datasource db {
 model Tenant {
   id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name            String        @db.VarChar(255)
+  city            String?       @db.VarChar(100)
   subdomain       String?       @unique @db.VarChar(100)
   customDomain    String?       @map("custom_domain") @db.VarChar(255)
   defaultLanguage String?       @default("ar") @map("default_language") @db.VarChar(10)
@@ -20,7 +21,8 @@ model Tenant {
   addressText     String?       @map("address_text")
   bookingPolicy   String?       @default("DEPOSIT_REQUIRED") @map("booking_policy") @db.VarChar(50)
   createdAt       DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
-  
+  updatedAt       DateTime?     @updatedAt @map("updated_at") @db.Timestamp(6)
+
   services        Service[]
   appointments    Appointment[]
   customerPackages CustomerPackage[]
@@ -96,22 +98,16 @@ model CustomerPackage {
   tenantId          String?   @map("tenant_id") @db.Uuid
   customerId        String?   @map("customer_id") @db.Uuid
   serviceId         String?   @map("service_id") @db.Uuid
+  packageName       Json?     @map("package_name") @db.JsonB
+  price             Decimal?  @db.Decimal(10, 2)
+  status            String?   @default("ACTIVE") @db.VarChar(50)
   totalSessions     Int?      @map("total_sessions")
   remainingSessions Int?      @map("remaining_sessions")
   expiresAt         DateTime? @map("expires_at") @db.Date
+  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
 
   tenant            Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   service           Service?  @relation(fields: [serviceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("customer_packages")
-}
-
-model Salon {
-  id        String   @id @default(uuid())
-  name      String
-  city      String
-  lat       Float?
-  lng       Float?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }

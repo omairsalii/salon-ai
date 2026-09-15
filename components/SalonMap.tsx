@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css';
 interface Salon {
   id: string;
   name: string;
-  city: string;
+  city: string | null;
   lat: number | null;
   lng: number | null;
 }
@@ -49,7 +49,7 @@ export default function SalonMap({ salons }: { salons: Salon[] }) {
         if (salon.lat && salon.lng) {
           L.marker([salon.lat, salon.lng], { icon: customIcon })
             .addTo(map)
-            .bindPopup(`<b>${salon.name}</b><br>المدينة: ${salon.city}`);
+            .bindPopup(`<b>${salon.name}</b><br>المدينة: ${salon.city || '—'}`);
         }
       });
 

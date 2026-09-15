@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 // POST: إنشاء حجز جديد مع التحقق من الخدمات والأسعار
+// ملاحظة: لا يوجد بعد تحقق من هوية العميل (customer auth) — القيمة الافتراضية
+// 'guest-customer' مؤقتة بانتظار نظام حسابات العملاء.
 export async function POST(request: Request) {
   try {
     const body = await request.json();

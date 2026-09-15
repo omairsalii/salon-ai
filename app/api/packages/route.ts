@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 // GET: جلب الباقات المتاحة لصالون معين
 export async function GET(request: Request) {
