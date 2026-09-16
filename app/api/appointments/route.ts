@@ -30,6 +30,24 @@ export async function POST(request: Request) {
       );
     }
 
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant || !tenant.isPublished) {
+      return NextResponse.json({ success: false, error: 'Salon not found' }, { status: 404 });
+    }
+
+    // التحقق من أقل مدة إشعار مسبق قبل الحجز (إعداد يتحكم به صاحب الصالون)
+    const startDateTime = new Date(startTime);
+    const minNoticeMs = (tenant.minBookingNoticeHours || 0) * 60 * 60 * 1000;
+    if (startDateTime.getTime() < Date.now() + minNoticeMs) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `يجب الحجز قبل الموعد بـ ${tenant.minBookingNoticeHours} ساعة على الأقل`,
+        },
+        { status: 400 }
+      );
+    }
+
     // إيجاد أو إنشاء سجل العميل عند الحجز كضيف بالاسم والجوال
     let resolvedCustomerId: string | null = customerId || null;
     if (!resolvedCustomerId && customerName && customerPhone) {
@@ -45,10 +63,9 @@ export async function POST(request: Request) {
     }
 
     const basePrice = service.basePrice ? Number(service.basePrice) : 0;
-    const depositAmount = basePrice * 0.3; // افتراض عربون بقيمة 30% كسياسة أولية للحجز
+    const depositAmount = basePrice * (tenant.depositPercentage / 100);
 
     // حساب وقت النهاية بحسب مدة الخدمة (أو 60 دقيقة افتراضياً إذا لم تُحدد)
-    const startDateTime = new Date(startTime);
     const durationMinutes = service.baseDurationMinutes || 60;
     const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60 * 1000);
 
@@ -59,7 +76,7 @@ export async function POST(request: Request) {
         customerId: resolvedCustomerId,
         employeeId: employeeId || null,
         serviceId,
-        status: 'PENDING_DEPOSIT', // حالة الحجز بانتظار دفع العربون
+        status: depositAmount > 0 ? 'PENDING_DEPOSIT' : 'CONFIRMED',
         totalAmount: basePrice,
         depositAmount: depositAmount,
         paymentStatus: 'UNPAID',

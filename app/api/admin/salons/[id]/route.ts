@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/session';
+import { requireAdmin } from '@/lib/adminSession';
 
-export async function GET() {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-  }
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const guard = await requireAdmin();
+  if ('response' in guard) return guard.response;
 
-  const tenant = await prisma.tenant.findUnique({ where: { id: session.tenantId } });
+  const { id } = await params;
+  const tenant = await prisma.tenant.findUnique({
+    where: { id },
+    include: { owner: { select: { email: true, name: true } } },
+  });
   if (!tenant) {
     return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
   }
@@ -17,17 +19,20 @@ export async function GET() {
   return NextResponse.json({ success: true, data: tenant }, { status: 200 });
 }
 
-export async function PATCH(request: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-  }
+// تعديل أي صالون بصلاحية الأدمن — بدون تقييد بـ tenantId كما هو الحال بجانب
+// المالك؛ الأدمن يقدر يعدّل أي صالون على المنصة.
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const guard = await requireAdmin();
+  if ('response' in guard) return guard.response;
+
+  const { id } = await params;
 
   try {
     const body = await request.json();
     const {
       name,
       city,
+      addressText,
       workingHoursText,
       currency,
       timezone,
@@ -40,10 +45,11 @@ export async function PATCH(request: Request) {
     } = body;
 
     const tenant = await prisma.tenant.update({
-      where: { id: session.tenantId },
+      where: { id },
       data: {
         ...(name ? { name } : {}),
         ...(city !== undefined ? { city: city || null } : {}),
+        ...(addressText !== undefined ? { addressText: addressText || null } : {}),
         ...(workingHoursText !== undefined ? { workingHoursText: workingHoursText || null } : {}),
         ...(currency ? { currency } : {}),
         ...(timezone ? { timezone } : {}),
@@ -68,9 +74,9 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ success: true, data: tenant }, { status: 200 });
   } catch (error: any) {
-    console.error('Error updating settings:', error);
+    console.error('Admin error updating tenant:', error);
     return NextResponse.json(
-      { success: false, error: 'فشل تحديث الإعدادات', details: error.message },
+      { success: false, error: 'فشل تحديث الصالون', details: error.message },
       { status: 500 }
     );
   }

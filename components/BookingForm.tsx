@@ -12,10 +12,14 @@ interface ServiceOption {
 export default function BookingForm({
   tenantId,
   service,
+  currency,
+  depositPercentage,
   onClose,
 }: {
   tenantId: string;
   service: ServiceOption;
+  currency: string;
+  depositPercentage: number;
   onClose: () => void;
 }) {
   const t = useTranslations('SalonDetail');
@@ -107,7 +111,15 @@ export default function BookingForm({
                 />
               </div>
 
-              <p className="text-xs text-gray-400">{t('depositNote')}</p>
+              <p className="text-xs text-gray-400">
+                {depositPercentage > 0
+                  ? `${t('depositNote')} (${depositPercentage}%${
+                      service.basePrice
+                        ? ` ≈ ${((service.basePrice * depositPercentage) / 100).toFixed(0)} ${currency}`
+                        : ''
+                    })`
+                  : t('noDepositNote')}
+              </p>
 
               <div className="flex gap-2 pt-2">
                 <button

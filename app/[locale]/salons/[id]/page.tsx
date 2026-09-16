@@ -12,7 +12,7 @@ export default async function SalonDetailPage({
   const { locale, id } = await params;
 
   const tenant = await prisma.tenant.findUnique({ where: { id } });
-  if (!tenant) notFound();
+  if (!tenant || !tenant.isPublished) notFound();
 
   const services = await prisma.service.findMany({
     where: { tenantId: tenant.id },
@@ -49,6 +49,16 @@ export default async function SalonDetailPage({
           <p className="text-gray-600">
             {tenant.addressText || tenant.city || (locale === 'ar' ? 'موقع مميز في دول الخليج' : 'Prime GCC Location')}
           </p>
+          {tenant.phone && (
+            <p className="text-gray-500 text-sm mt-1" dir="ltr">
+              📞 {tenant.phone}
+            </p>
+          )}
+          {(() => {
+            const description = (tenant.description as Record<string, string> | null) || {};
+            const text = description[locale] || description.ar || description.en;
+            return text ? <p className="text-gray-700 mt-4 leading-relaxed">{text}</p> : null;
+          })()}
         </header>
 
         {(tenant.latitude && tenant.longitude) && (
@@ -59,7 +69,12 @@ export default async function SalonDetailPage({
 
         <section>
           <h2 className="text-xl font-bold text-gray-800 mb-4">{t('services')}</h2>
-          <ServicesList tenantId={tenant.id} services={serviceRows} currency={tenant.currency || 'USD'} />
+          <ServicesList
+            tenantId={tenant.id}
+            services={serviceRows}
+            currency={tenant.currency || 'USD'}
+            depositPercentage={tenant.depositPercentage}
+          />
         </section>
       </div>
     </main>

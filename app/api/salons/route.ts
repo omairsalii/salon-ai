@@ -40,7 +40,7 @@ export async function GET(request: Request) {
             )
           ) AS distance_meters
         FROM tenants
-        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL AND is_published = true
         AND (
           6371000 * acos(
             cos(radians(${userLat})) * cos(radians(latitude)) *
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
       `;
     } else {
       salons = await prisma.tenant.findMany({
-        where: city ? { city } : undefined,
+        where: { isPublished: true, ...(city ? { city } : {}) },
         take: 20,
         orderBy: { createdAt: 'desc' },
       });

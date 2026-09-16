@@ -12,14 +12,14 @@ export default async function SalonsPage({
   const { locale } = await params;
   const { city: selectedCity } = await searchParams;
 
-  // جلب الصالونات (المستأجرين) مع تطبيق الفلتر إذا تم تحديد المدينة
+  // جلب الصالونات (المستأجرين) المنشورة فقط، مع تطبيق الفلتر إذا تم تحديد المدينة
   const tenants = await prisma.tenant.findMany({
-    where: selectedCity ? { city: selectedCity } : undefined,
+    where: { isPublished: true, ...(selectedCity ? { city: selectedCity } : {}) },
     orderBy: { createdAt: 'desc' },
   });
 
-  // جلب المدن الفريدة لتعبئة أزرار الفلترة
-  const allTenants = await prisma.tenant.findMany({ select: { city: true } });
+  // جلب المدن الفريدة لتعبئة أزرار الفلترة (من الصالونات المنشورة فقط)
+  const allTenants = await prisma.tenant.findMany({ where: { isPublished: true }, select: { city: true } });
   const cities = Array.from(new Set(allTenants.map((t) => t.city).filter(Boolean))) as string[];
 
   // تحويل الصالونات لشكل قابل للتسلسل (serializable) لتمريرها لمكوّن العميل SalonMap

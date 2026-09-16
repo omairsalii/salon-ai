@@ -16,17 +16,30 @@ export default function SettingsPage() {
   const [workingHoursText, setWorkingHoursText] = useState('');
   const [currency, setCurrency] = useState('');
   const [timezone, setTimezone] = useState('');
+  const [descriptionAr, setDescriptionAr] = useState('');
+  const [descriptionEn, setDescriptionEn] = useState('');
+  const [phone, setPhone] = useState('');
+  const [isPublished, setIsPublished] = useState(true);
+  const [depositPercentage, setDepositPercentage] = useState('30');
+  const [minBookingNoticeHours, setMinBookingNoticeHours] = useState('2');
 
   useEffect(() => {
     (async () => {
       const res = await fetch('/api/dashboard/settings');
       const data = await res.json();
       if (data.success) {
-        setName(data.data.name || '');
-        setCity(data.data.city || '');
-        setWorkingHoursText(data.data.workingHoursText || '');
-        setCurrency(data.data.currency || '');
-        setTimezone(data.data.timezone || '');
+        const tenant = data.data;
+        setName(tenant.name || '');
+        setCity(tenant.city || '');
+        setWorkingHoursText(tenant.workingHoursText || '');
+        setCurrency(tenant.currency || '');
+        setTimezone(tenant.timezone || '');
+        setDescriptionAr(tenant.description?.ar || '');
+        setDescriptionEn(tenant.description?.en || '');
+        setPhone(tenant.phone || '');
+        setIsPublished(tenant.isPublished !== false);
+        setDepositPercentage(String(tenant.depositPercentage ?? 30));
+        setMinBookingNoticeHours(String(tenant.minBookingNoticeHours ?? 2));
       }
       setLoading(false);
     })();
@@ -42,7 +55,19 @@ export default function SettingsPage() {
       const res = await fetch('/api/dashboard/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, city, workingHoursText, currency, timezone }),
+        body: JSON.stringify({
+          name,
+          city,
+          workingHoursText,
+          currency,
+          timezone,
+          descriptionAr,
+          descriptionEn,
+          phone,
+          isPublished,
+          depositPercentage,
+          minBookingNoticeHours,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل الحفظ');
@@ -92,6 +117,48 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-stone-700 mb-1">المنطقة الزمنية</label>
             <input value={timezone} onChange={(e) => setTimezone(e.target.value)} dir="ltr" className="w-full px-3 py-2 border rounded-md text-black text-left" />
           </div>
+        </div>
+
+        <hr className="border-stone-100" />
+
+        <h2 className="text-sm font-bold text-stone-800">{t('customerPageSection')}</h2>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-1">{t('descriptionAr')}</label>
+          <textarea value={descriptionAr} onChange={(e) => setDescriptionAr(e.target.value)} rows={3} className="w-full px-3 py-2 border rounded-md text-black" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-1">{t('descriptionEn')}</label>
+          <textarea value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} rows={3} dir="ltr" className="w-full px-3 py-2 border rounded-md text-black text-left" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-1">{t('phone')}</label>
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} dir="ltr" className="w-full px-3 py-2 border rounded-md text-black text-left" />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1">{t('depositPercentage')}</label>
+            <input type="number" min={0} max={100} value={depositPercentage} onChange={(e) => setDepositPercentage(e.target.value)} className="w-full px-3 py-2 border rounded-md text-black" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1">{t('minBookingNoticeHours')}</label>
+            <input type="number" min={0} value={minBookingNoticeHours} onChange={(e) => setMinBookingNoticeHours(e.target.value)} className="w-full px-3 py-2 border rounded-md text-black" />
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3 p-3 bg-stone-50 rounded-md border border-stone-200">
+          <input
+            type="checkbox"
+            id="isPublished"
+            checked={isPublished}
+            onChange={(e) => setIsPublished(e.target.checked)}
+            className="mt-1"
+          />
+          <label htmlFor="isPublished" className="text-sm">
+            <span className="font-medium text-stone-800">{t('isPublished')}</span>
+            <p className="text-stone-500 text-xs mt-0.5">{t('isPublishedWarning')}</p>
+          </label>
         </div>
 
         <button type="submit" disabled={saving} className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm disabled:opacity-50">

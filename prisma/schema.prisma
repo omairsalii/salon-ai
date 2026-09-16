@@ -21,6 +21,11 @@ model Tenant {
   addressText     String?       @map("address_text")
   bookingPolicy   String?       @default("DEPOSIT_REQUIRED") @map("booking_policy") @db.VarChar(50)
   workingHoursText String?      @map("working_hours_text")
+  description     Json?         @db.JsonB
+  phone           String?       @db.VarChar(50)
+  isPublished     Boolean       @default(true) @map("is_published")
+  depositPercentage Int         @default(30) @map("deposit_percentage")
+  minBookingNoticeHours Int     @default(2) @map("min_booking_notice_hours")
   createdAt       DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt       DateTime?     @updatedAt @map("updated_at") @db.Timestamp(6)
 
@@ -45,6 +50,17 @@ model Owner {
   tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("owners")
+}
+
+// حساب مالك المنصة — منفصل تمامًا عن Owner (لا يتبع لأي Tenant)
+model Admin {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String   @db.VarChar(255)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("admins")
 }
 
 model Staff {

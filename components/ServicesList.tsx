@@ -15,10 +15,12 @@ export default function ServicesList({
   tenantId,
   services,
   currency,
+  depositPercentage,
 }: {
   tenantId: string;
   services: ServiceRow[];
   currency: string;
+  depositPercentage: number;
 }) {
   const t = useTranslations('SalonDetail');
   const [selected, setSelected] = useState<ServiceRow | null>(null);
@@ -54,6 +56,8 @@ export default function ServicesList({
         <BookingForm
           tenantId={tenantId}
           service={{ id: selected.id, displayName: selected.displayName, basePrice: selected.basePrice }}
+          currency={currency}
+          depositPercentage={depositPercentage}
           onClose={() => setSelected(null)}
         />
       )}
