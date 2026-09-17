@@ -26,6 +26,7 @@ export default function DashboardShell({
     { href: `${base}/bookings`, label: t('appointments'), icon: '📅' },
     { href: `${base}/clients`, label: t('clients'), icon: '👥' },
     { href: `${base}/services`, label: t('services'), icon: '💇‍♀️' },
+    { href: `${base}/offers`, label: t('offers'), icon: '🏷️' },
     { href: `${base}/staff`, label: t('staff'), icon: '🧑‍💼' },
     { href: `${base}/settings`, label: t('settings'), icon: '⚙️' },
   ];

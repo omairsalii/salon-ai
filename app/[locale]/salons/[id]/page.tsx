@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import SalonMap from '@/components/SalonMap';
 import ServicesList from '@/components/ServicesList';
+import { describeOffer } from '@/lib/offers';
 
 export default async function SalonDetailPage({
   params,
@@ -16,6 +17,16 @@ export default async function SalonDetailPage({
 
   const services = await prisma.service.findMany({
     where: { tenantId: tenant.id },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const offers = await prisma.offer.findMany({
+    where: {
+      tenantId: tenant.id,
+      isActive: true,
+      OR: [{ endsAt: null }, { endsAt: { gte: new Date() } }],
+    },
+    include: { appliesToService: true, freeService: true },
     orderBy: { createdAt: 'desc' },
   });
 
@@ -60,6 +71,34 @@ export default async function SalonDetailPage({
             return text ? <p className="text-gray-700 mt-4 leading-relaxed">{text}</p> : null;
           })()}
         </header>
+
+        {offers.length > 0 && (
+          <div className="mb-8 space-y-2">
+            {offers.map((offer) => (
+              <div
+                key={offer.id}
+                className="flex items-start gap-3 bg-rose-50 border border-rose-200 rounded-xl p-4"
+              >
+                <span className="text-lg">🔔</span>
+                <div>
+                  <p className="font-semibold text-rose-900">{tenant.name}</p>
+                  <p className="text-sm text-rose-700 mt-0.5">
+                    {describeOffer(offer as any, locale, tenant.currency || 'USD')}
+                    {offer.appliesToService && (
+                      <>
+                        {' — '}
+                        {(() => {
+                          const name = (offer.appliesToService!.name as Record<string, string> | null) || {};
+                          return name[locale] || name.ar || name.en || '';
+                        })()}
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {(tenant.latitude && tenant.longitude) && (
           <div className="mb-8 bg-white p-2 rounded-lg shadow border border-gray-100">

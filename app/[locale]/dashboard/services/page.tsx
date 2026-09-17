@@ -3,6 +3,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
+import ServiceCombobox from '@/components/dashboard/ServiceCombobox';
 
 interface ServiceRow {
   id: string;
@@ -113,14 +114,12 @@ export default function ServicesPage() {
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 mb-6 space-y-4">
           {error && <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">اسم الخدمة (عربي)</label>
-              <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} required className="w-full px-3 py-2 border rounded-md text-black" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Service name (English)</label>
-              <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} required dir="ltr" className="w-full px-3 py-2 border rounded-md text-black" />
-            </div>
+            <ServiceCombobox
+              locale={locale}
+              nameAr={nameAr}
+              nameEn={nameEn}
+              onChange={(ar, en) => { setNameAr(ar); setNameEn(en); }}
+            />
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1">{t('price')} ({common('currency')})</label>
               <input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full px-3 py-2 border rounded-md text-black" />

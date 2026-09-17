@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import SalonMap from '@/components/SalonMap';
+import SalonGrid from '@/components/SalonGrid';
 
 export default async function SalonsPage({
   params,
@@ -22,13 +23,39 @@ export default async function SalonsPage({
   const allTenants = await prisma.tenant.findMany({ where: { isPublished: true }, select: { city: true } });
   const cities = Array.from(new Set(allTenants.map((t) => t.city).filter(Boolean))) as string[];
 
-  // تحويل الصالونات لشكل قابل للتسلسل (serializable) لتمريرها لمكوّن العميل SalonMap
-  const salons = tenants.map((t) => ({
+  // تحديد الصالونات التي لديها عرض نشط حاليًا
+  const activeOfferTenantIds = new Set(
+    (
+      await prisma.offer.findMany({
+        where: {
+          tenantId: { in: tenants.map((t) => t.id) },
+          isActive: true,
+          OR: [{ endsAt: null }, { endsAt: { gte: new Date() } }],
+        },
+        select: { tenantId: true },
+        distinct: ['tenantId'],
+      })
+    ).map((o) => o.tenantId)
+  );
+
+  // تحويل الصالونات لشكل قابل للتسلسل لتمريرها لمكوّنات العميل
+  const mapSalons = tenants.map((t) => ({
     id: t.id,
     name: t.name,
     city: t.city,
     lat: t.latitude ? Number(t.latitude) : null,
     lng: t.longitude ? Number(t.longitude) : null,
+  }));
+
+  const gridSalons = tenants.map((t) => ({
+    id: t.id,
+    name: t.name,
+    city: t.city,
+    addressText: t.addressText,
+    currency: t.currency,
+    latitude: t.latitude ? Number(t.latitude) : null,
+    longitude: t.longitude ? Number(t.longitude) : null,
+    hasActiveOffer: activeOfferTenantIds.has(t.id),
   }));
 
   return (
@@ -70,47 +97,16 @@ export default async function SalonsPage({
       {/* عرض الخريطة التفاعلية */}
       <div className="mb-8 bg-white p-2 rounded-lg shadow border border-gray-100">
         <h2 className="text-lg font-semibold mb-3 px-2 text-gray-700">📍 الخريطة التفاعلية للصالونات</h2>
-        <SalonMap salons={salons} />
+        <SalonMap salons={mapSalons} />
       </div>
 
-      {/* قائمة البطاقات */}
+      {/* قائمة البطاقات مع البحث والأقرب لي */}
       {tenants.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
           <p className="text-gray-500 mb-2">لا توجد صالونات مطابقة للبحث أو مضافة حتى الآن.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {tenants.map((tenant) => (
-            <div key={tenant.id} className="p-5 bg-white shadow rounded-lg border border-gray-100 flex flex-col justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-1">{tenant.name}</h2>
-                <p className="text-gray-600 text-sm mb-3">📍 المدينة: <span className="font-medium">{tenant.city || '—'}</span></p>
-              </div>
-
-              {tenant.latitude && tenant.longitude ? (
-                <div className="text-xs bg-gray-50 p-2 rounded text-gray-600 mb-3 flex items-center justify-between" dir="ltr">
-                  <span className="text-gray-400">Lat, Lng:</span>
-                  <span className="font-mono font-medium">{tenant.latitude.toString()}, {tenant.longitude.toString()}</span>
-                </div>
-              ) : (
-                <div className="text-xs bg-yellow-50 p-2 rounded text-yellow-600 mb-3">
-                  ⚠️ لم يتم تحديد الإحداثيات الجغرافية بعد
-                </div>
-              )}
-
-              <div className="text-xs text-gray-400 border-t pt-2 mb-3">
-                تاريخ الإضافة: {tenant.createdAt ? new Date(tenant.createdAt).toLocaleDateString('ar-SA') : '—'}
-              </div>
-
-              <Link
-                href={`/${locale}/salons/${tenant.id}`}
-                className="bg-black text-white text-center px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
-              >
-                احجز الآن
-              </Link>
-            </div>
-          ))}
-        </div>
+        <SalonGrid locale={locale} salons={gridSalons} />
       )}
     </div>
   );

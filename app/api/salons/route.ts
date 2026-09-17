@@ -38,7 +38,12 @@ export async function GET(request: Request) {
               cos(radians(longitude) - radians(${userLng})) +
               sin(radians(${userLat})) * sin(radians(latitude))
             )
-          ) AS distance_meters
+          ) / 1000 AS "distanceKm",
+          EXISTS(
+            SELECT 1 FROM offers
+            WHERE offers.tenant_id = tenants.id AND offers.is_active = true
+            AND (offers.ends_at IS NULL OR offers.ends_at >= now())
+          ) AS "hasActiveOffer"
         FROM tenants
         WHERE latitude IS NOT NULL AND longitude IS NOT NULL AND is_published = true
         AND (
@@ -48,15 +53,31 @@ export async function GET(request: Request) {
             sin(radians(${userLat})) * sin(radians(latitude))
           )
         ) <= ${radiusMeters}
-        ORDER BY distance_meters ASC
+        ORDER BY "distanceKm" ASC
         LIMIT 20;
       `;
     } else {
-      salons = await prisma.tenant.findMany({
+      const tenants = await prisma.tenant.findMany({
         where: { isPublished: true, ...(city ? { city } : {}) },
         take: 20,
         orderBy: { createdAt: 'desc' },
       });
+
+      const activeOfferTenantIds = new Set(
+        (
+          await prisma.offer.findMany({
+            where: {
+              tenantId: { in: tenants.map((t) => t.id) },
+              isActive: true,
+              OR: [{ endsAt: null }, { endsAt: { gte: new Date() } }],
+            },
+            select: { tenantId: true },
+            distinct: ['tenantId'],
+          })
+        ).map((o) => o.tenantId)
+      );
+
+      salons = tenants.map((t) => ({ ...t, hasActiveOffer: activeOfferTenantIds.has(t.id) }));
     }
 
     return NextResponse.json(

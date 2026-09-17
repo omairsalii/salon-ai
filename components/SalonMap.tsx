@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import { googleMapsUrl } from '@/lib/geo';
 
 interface Salon {
   id: string;
@@ -9,6 +12,7 @@ interface Salon {
   city: string | null;
   lat: number | null;
   lng: number | null;
+  distanceKm?: number;
 }
 
 export default function SalonMap({ salons }: { salons: Salon[] }) {
@@ -21,9 +25,14 @@ export default function SalonMap({ salons }: { salons: Salon[] }) {
   useEffect(() => {
     if (!isMounted) return;
 
-    // استيراد Leaflet داخل الـ useEffect لضمان تشغيلها في المتصفح فقط وبشكل آمن
-    import('leaflet').then((L) => {
-      // إعداد الأيقونات الافتراضية بشكل صحيح
+    // استيراد Leaflet داخل الـ useEffect لضمان تشغيلها بالمتصفح فقط. يجب
+    // تحميل leaflet أولًا وتعيينها كمتغير عالمي (window.L) قبل استيراد
+    // leaflet.markercluster، لأنه إضافة قديمة الطراز تتوقع L متاحة عالميًا
+    // بدل استيرادها كوحدة ES منفصلة — تحميلهما بالتوازي يفشل بخطأ "L is not defined".
+    import('leaflet').then(async ({ default: L }) => {
+      (window as any).L = L;
+      await import('leaflet.markercluster');
+
       const customIcon = L.icon({
         iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
@@ -45,13 +54,30 @@ export default function SalonMap({ salons }: { salons: Salon[] }) {
         attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map);
 
+      const clusterGroup = (L as any).markerClusterGroup();
+
+      const bounds: [number, number][] = [];
       salons.forEach((salon) => {
         if (salon.lat && salon.lng) {
+          bounds.push([salon.lat, salon.lng]);
+          const distanceLine = salon.distanceKm !== undefined
+            ? `<br>المسافة: ${salon.distanceKm.toFixed(1)} كم`
+            : '';
           L.marker([salon.lat, salon.lng], { icon: customIcon })
-            .addTo(map)
-            .bindPopup(`<b>${salon.name}</b><br>المدينة: ${salon.city || '—'}`);
+            .bindPopup(
+              `<b>${salon.name}</b><br>المدينة: ${salon.city || '—'}${distanceLine}` +
+              `<br><a href="${googleMapsUrl(salon.lat, salon.lng)}" target="_blank" rel="noopener noreferrer">فتح في خرائط قوقل ↗</a>`
+            )
+            .addTo(clusterGroup);
         }
       });
+
+      map.addLayer(clusterGroup);
+      if (bounds.length > 1) {
+        map.fitBounds(bounds, { padding: [30, 30] });
+      } else if (bounds.length === 1) {
+        map.setView(bounds[0], 14);
+      }
 
       return () => {
         map.remove();
