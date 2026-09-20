@@ -1,4 +1,33 @@
 {
+  "Account": {
+    "registerTitle": "إنشاء حساب",
+    "registerSubtitle": "سجّل حساب لتتبع حجوزاتك وتصلك العروض الخاصة بك.",
+    "loginTitle": "تسجيل دخول العميل",
+    "yourName": "اسمك",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "createAccount": "إنشاء الحساب",
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "noAccount": "ما عندك حساب؟",
+    "haveAccount": "عندك حساب بالفعل؟",
+    "registerLink": "سجّل الآن",
+    "loginLink": "سجّل الدخول",
+    "myAccount": "حسابي",
+    "notifications": "الإشعارات",
+    "noNotifications": "لا توجد إشعارات جديدة",
+    "upcomingReminder": "لديك موعد قادم",
+    "history": "سجل الحجوزات",
+    "noHistory": "لا توجد حجوزات بعد",
+    "salon": "الصالون",
+    "service": "الخدمة",
+    "date": "التاريخ",
+    "amountPaid": "المبلغ",
+    "discount": "الخصم المطبّق",
+    "noDiscount": "بدون خصم",
+    "bookingAs": "تحجز باسم",
+    "signInPrompt": "سجّل دخولك لحفظ هذا الحجز بحسابك وتتبعه لاحقًا"
+  },
   "Index": {
     "title": "أهلاً بك في Salon AI",
     "description": "منصة ذكية عالية الأداء لسوق التجميل في دول الخليج"
@@ -162,7 +191,12 @@
     "bookingSuccess": "تم حجز موعدك بنجاح! سيتواصل معك الصالون لتأكيد الحجز.",
     "depositNote": "هذا الحجز يتطلب دفع عربون عند التأكيد حسب سياسة الصالون.",
     "noDepositNote": "لا يتطلب هذا الصالون دفع عربون لتأكيد الحجز.",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "chooseStaff": "اختر الموظف (اختياري)",
+    "anyStaff": "بدون تفضيل",
+    "applyOffer": "تطبيق عرض (اختياري)",
+    "noOffer": "بدون عرض",
+    "finalPrice": "السعر النهائي بعد الخصم"
   },
   "Admin": {
     "portalTitle": "لوحة إدارة المنصة",

@@ -1,4 +1,33 @@
 {
+  "Account": {
+    "registerTitle": "Create an Account",
+    "registerSubtitle": "Register to track your bookings and get offers just for you.",
+    "loginTitle": "Customer Login",
+    "yourName": "Your name",
+    "email": "Email",
+    "password": "Password",
+    "createAccount": "Create Account",
+    "login": "Log In",
+    "logout": "Log Out",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "registerLink": "Register now",
+    "loginLink": "Log in",
+    "myAccount": "My Account",
+    "notifications": "Notifications",
+    "noNotifications": "No new notifications",
+    "upcomingReminder": "You have an upcoming appointment",
+    "history": "Booking History",
+    "noHistory": "No bookings yet",
+    "salon": "Salon",
+    "service": "Service",
+    "date": "Date",
+    "amountPaid": "Amount",
+    "discount": "Discount Applied",
+    "noDiscount": "No discount",
+    "bookingAs": "Booking as",
+    "signInPrompt": "Sign in to save and track this booking on your account"
+  },
   "Index": {
     "title": "Welcome to Salon AI",
     "description": "High-performance geo-spatial marketplace for the GCC beauty sector"
@@ -162,7 +191,12 @@
     "bookingSuccess": "Your appointment was booked! The salon will contact you to confirm.",
     "depositNote": "This booking requires a deposit upon confirmation, per the salon's policy.",
     "noDepositNote": "This salon does not require a deposit to confirm bookings.",
-    "close": "Close"
+    "close": "Close",
+    "chooseStaff": "Choose staff (optional)",
+    "anyStaff": "No preference",
+    "applyOffer": "Apply an offer (optional)",
+    "noOffer": "No offer",
+    "finalPrice": "Final price after discount"
   },
   "Admin": {
     "portalTitle": "Platform Admin",

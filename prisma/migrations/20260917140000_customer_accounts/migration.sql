@@ -1,0 +1,15 @@
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS customer_accounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES customer_accounts(id) ON DELETE SET NULL;
+
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS applied_offer_id UUID REFERENCES offers(id) ON DELETE SET NULL;
+
+COMMIT;

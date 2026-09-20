@@ -11,16 +11,27 @@ interface ServiceRow {
   baseDurationMinutes: number | null;
 }
 
+export interface ApplicableOffer {
+  id: string;
+  type: string;
+  discountPercent: number | null;
+  discountAmount: number | null;
+  appliesToServiceId: string | null;
+  freeServiceId: string | null;
+}
+
 export default function ServicesList({
   tenantId,
   services,
   currency,
   depositPercentage,
+  offers,
 }: {
   tenantId: string;
   services: ServiceRow[];
   currency: string;
   depositPercentage: number;
+  offers: ApplicableOffer[];
 }) {
   const t = useTranslations('SalonDetail');
   const [selected, setSelected] = useState<ServiceRow | null>(null);
@@ -28,6 +39,13 @@ export default function ServicesList({
   if (services.length === 0) {
     return <p className="text-gray-400 text-sm py-4">{t('noServices')}</p>;
   }
+
+  const offersForService = (serviceId: string) =>
+    offers.filter((o) =>
+      o.type === 'FREE_SERVICE'
+        ? o.freeServiceId === serviceId
+        : o.appliesToServiceId === serviceId || o.appliesToServiceId === null
+    );
 
   return (
     <div className="space-y-3">
@@ -58,6 +76,7 @@ export default function ServicesList({
           service={{ id: selected.id, displayName: selected.displayName, basePrice: selected.basePrice }}
           currency={currency}
           depositPercentage={depositPercentage}
+          offers={offersForService(selected.id)}
           onClose={() => setSelected(null)}
         />
       )}

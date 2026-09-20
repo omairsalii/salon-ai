@@ -113,6 +113,16 @@ export default async function SalonDetailPage({
             services={serviceRows}
             currency={tenant.currency || 'USD'}
             depositPercentage={tenant.depositPercentage}
+            offers={offers
+              .filter((o) => ['PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SERVICE'].includes(o.type))
+              .map((o) => ({
+                id: o.id,
+                type: o.type,
+                discountPercent: o.discountPercent,
+                discountAmount: o.discountAmount ? Number(o.discountAmount) : null,
+                appliesToServiceId: o.appliesToServiceId,
+                freeServiceId: o.freeServiceId,
+              }))}
           />
         </section>
       </div>

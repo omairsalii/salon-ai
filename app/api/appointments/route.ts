@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getCustomerSession } from '@/lib/customerSession';
+
+const DIRECTLY_APPLICABLE_OFFER_TYPES = ['PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SERVICE'];
 
 // POST: إنشاء حجز جديد مع التحقق من الخدمات والأسعار
 // حجز الضيف (بدون تسجيل دخول) مدعوم عبر customerName + customerPhone: نبحث
 // عن عميل بنفس الجوال لدى هذا الصالون، وإذا ما وُجد ننشئ سجل Customer جديد له
 // — هذا يخليه يظهر فورًا في CRM صاحب الصالون بدل ما يكون "ضيف" منفصل ومخفي.
+// لو فيه عميل مسجّل دخوله (حساب)، نربط سجل Customer بحسابه بدل الاعتماد على
+// الاسم/الجوال فقط، حتى يظهر الحجز بسجل حجوزاته لاحقًا مهما كان الصالون.
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tenantId, customerId, customerName, customerPhone, serviceId, employeeId, startTime } = body;
+    const { tenantId, customerId, customerName, customerPhone, serviceId, employeeId, offerId, startTime } = body;
 
     // التحقق من الحقول الأساسية المطلوبة
     if (!tenantId || !serviceId || !startTime) {
@@ -48,9 +53,27 @@ export async function POST(request: Request) {
       );
     }
 
-    // إيجاد أو إنشاء سجل العميل عند الحجز كضيف بالاسم والجوال
+    // إيجاد أو إنشاء سجل العميل — مرتبط بحساب العميل لو مسجّل دخوله، وإلا
+    // بالاسم والجوال كضيف (نفس السلوك السابق تمامًا)
+    const customerSession = await getCustomerSession();
     let resolvedCustomerId: string | null = customerId || null;
-    if (!resolvedCustomerId && customerName && customerPhone) {
+
+    if (!resolvedCustomerId && customerSession) {
+      const existingLinked = await prisma.customer.findFirst({
+        where: { tenantId, accountId: customerSession.accountId },
+      });
+      const linkedCustomer =
+        existingLinked ||
+        (await prisma.customer.create({
+          data: {
+            tenantId,
+            accountId: customerSession.accountId,
+            name: customerSession.name,
+            phone: customerPhone || null,
+          },
+        }));
+      resolvedCustomerId = linkedCustomer.id;
+    } else if (!resolvedCustomerId && customerName && customerPhone) {
       const existingCustomer = await prisma.customer.findFirst({
         where: { tenantId, phone: customerPhone },
       });
@@ -63,7 +86,40 @@ export async function POST(request: Request) {
     }
 
     const basePrice = service.basePrice ? Number(service.basePrice) : 0;
-    const depositAmount = basePrice * (tenant.depositPercentage / 100);
+
+    // التحقق من العرض المُطبّق (إن وُجد) وحساب الخصم من طرف السيرفر دائمًا —
+    // لا نثق بأي مبلغ خصم يُرسل من العميل
+    let appliedOfferId: string | null = null;
+    let finalAmount = basePrice;
+
+    if (offerId) {
+      const offer = await prisma.offer.findFirst({ where: { id: offerId, tenantId, isActive: true } });
+      const notExpired = offer && (!offer.endsAt || offer.endsAt >= new Date());
+
+      if (!offer || !notExpired || !DIRECTLY_APPLICABLE_OFFER_TYPES.includes(offer.type)) {
+        return NextResponse.json({ success: false, error: 'العرض غير صالح' }, { status: 400 });
+      }
+
+      const appliesToThisService =
+        offer.type === 'FREE_SERVICE'
+          ? offer.freeServiceId === serviceId
+          : offer.appliesToServiceId === null || offer.appliesToServiceId === serviceId;
+
+      if (!appliesToThisService) {
+        return NextResponse.json({ success: false, error: 'هذا العرض لا ينطبق على هذه الخدمة' }, { status: 400 });
+      }
+
+      if (offer.type === 'PERCENTAGE' && offer.discountPercent) {
+        finalAmount = Math.max(0, basePrice * (1 - offer.discountPercent / 100));
+      } else if (offer.type === 'FIXED_AMOUNT' && offer.discountAmount) {
+        finalAmount = Math.max(0, basePrice - Number(offer.discountAmount));
+      } else if (offer.type === 'FREE_SERVICE') {
+        finalAmount = 0;
+      }
+      appliedOfferId = offer.id;
+    }
+
+    const depositAmount = finalAmount * (tenant.depositPercentage / 100);
 
     // حساب وقت النهاية بحسب مدة الخدمة (أو 60 دقيقة افتراضياً إذا لم تُحدد)
     const durationMinutes = service.baseDurationMinutes || 60;
@@ -76,8 +132,9 @@ export async function POST(request: Request) {
         customerId: resolvedCustomerId,
         employeeId: employeeId || null,
         serviceId,
+        appliedOfferId,
         status: depositAmount > 0 ? 'PENDING_DEPOSIT' : 'CONFIRMED',
-        totalAmount: basePrice,
+        totalAmount: finalAmount,
         depositAmount: depositAmount,
         paymentStatus: 'UNPAID',
         startTime: startDateTime,

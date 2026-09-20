@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useEffect, useMemo, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import { describeOffer } from '@/lib/offers';
+import type { ApplicableOffer } from './ServicesList';
 
 interface ServiceOption {
   id: string;
@@ -9,27 +11,78 @@ interface ServiceOption {
   basePrice: number | null;
 }
 
+interface StaffOption {
+  id: string;
+  name: string;
+}
+
+interface CustomerSessionInfo {
+  loggedIn: boolean;
+  name?: string;
+  email?: string;
+}
+
 export default function BookingForm({
   tenantId,
   service,
   currency,
   depositPercentage,
+  offers,
   onClose,
 }: {
   tenantId: string;
   service: ServiceOption;
   currency: string;
   depositPercentage: number;
+  offers: ApplicableOffer[];
   onClose: () => void;
 }) {
   const t = useTranslations('SalonDetail');
+  const accountT = useTranslations('Account');
 
+  const [session, setSession] = useState<CustomerSessionInfo>({ loggedIn: false });
+  const [staff, setStaff] = useState<StaffOption[]>([]);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
+  const [offerId, setOfferId] = useState('');
   const [startTime, setStartTime] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/account/session')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.loggedIn) setSession({ loggedIn: true, name: data.name, email: data.email });
+      })
+      .catch(() => {});
+
+    fetch(`/api/salons/${tenantId}/staff`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) setStaff(data.data);
+      })
+      .catch(() => {});
+  }, [tenantId]);
+
+  const selectedOffer = useMemo(() => offers.find((o) => o.id === offerId) || null, [offers, offerId]);
+
+  const finalPrice = useMemo(() => {
+    if (!service.basePrice) return null;
+    if (!selectedOffer) return service.basePrice;
+    if (selectedOffer.type === 'PERCENTAGE' && selectedOffer.discountPercent) {
+      return Math.max(0, service.basePrice * (1 - selectedOffer.discountPercent / 100));
+    }
+    if (selectedOffer.type === 'FIXED_AMOUNT' && selectedOffer.discountAmount) {
+      return Math.max(0, service.basePrice - selectedOffer.discountAmount);
+    }
+    if (selectedOffer.type === 'FREE_SERVICE') {
+      return 0;
+    }
+    return service.basePrice;
+  }, [service.basePrice, selectedOffer]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -43,8 +96,10 @@ export default function BookingForm({
         body: JSON.stringify({
           tenantId,
           serviceId: service.id,
-          customerName: name,
-          customerPhone: phone,
+          customerName: session.loggedIn ? session.name : name,
+          customerPhone: session.loggedIn ? undefined : phone,
+          employeeId: employeeId || undefined,
+          offerId: offerId || undefined,
           startTime,
         }),
       });
@@ -61,7 +116,7 @@ export default function BookingForm({
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-black">
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-black max-h-[90vh] overflow-y-auto">
         {success ? (
           <div className="text-center py-4">
             <p className="text-emerald-600 text-2xl mb-3">✓</p>
@@ -81,25 +136,64 @@ export default function BookingForm({
             {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
 
             <form onSubmit={handleSubmit} className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('yourName')}</label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('yourPhone')}</label>
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                  dir="ltr"
-                  className="w-full px-3 py-2 border rounded-md text-left"
-                />
-              </div>
+              {session.loggedIn ? (
+                <div className="bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm text-gray-700">
+                  {accountT('bookingAs')} <span className="font-medium">{session.name}</span>
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-400">
+                    {accountT('signInPrompt')} —{' '}
+                    <a href="/account/login" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      {accountT('loginLink')}
+                    </a>
+                  </p>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('yourName')}</label>
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('yourPhone')}</label>
+                    <input
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      required
+                      dir="ltr"
+                      className="w-full px-3 py-2 border rounded-md text-left"
+                    />
+                  </div>
+                </>
+              )}
+
+              {staff.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('chooseStaff')}</label>
+                  <select value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} className="w-full px-3 py-2 border rounded-md">
+                    <option value="">{t('anyStaff')}</option>
+                    {staff.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {offers.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('applyOffer')}</label>
+                  <select value={offerId} onChange={(e) => setOfferId(e.target.value)} className="w-full px-3 py-2 border rounded-md">
+                    <option value="">{t('noOffer')}</option>
+                    {offers.map((o) => (
+                      <option key={o.id} value={o.id}>{describeOffer(o as any, 'ar', currency)}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('dateTime')}</label>
                 <input
@@ -111,11 +205,17 @@ export default function BookingForm({
                 />
               </div>
 
+              {selectedOffer && finalPrice !== null && (
+                <p className="text-sm font-medium text-emerald-700 bg-emerald-50 rounded-md px-3 py-2">
+                  {t('finalPrice')}: {finalPrice.toFixed(0)} {currency}
+                </p>
+              )}
+
               <p className="text-xs text-gray-400">
                 {depositPercentage > 0
                   ? `${t('depositNote')} (${depositPercentage}%${
-                      service.basePrice
-                        ? ` ≈ ${((service.basePrice * depositPercentage) / 100).toFixed(0)} ${currency}`
+                      finalPrice !== null
+                        ? ` ≈ ${((finalPrice * depositPercentage) / 100).toFixed(0)} ${currency}`
                         : ''
                     })`
                   : t('noDepositNote')}
