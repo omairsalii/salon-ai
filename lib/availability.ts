@@ -1,11 +1,29 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import {
+  DEFAULT_TIMEZONE,
+  SLOT_STEP_MINUTES,
+  fitsWorkingHours,
+  resolveHours,
+  toMinutes,
+  weekdayOfDate,
+  zonedToUtc,
+  type WeeklyHours,
+} from '@/lib/schedule';
 
 export class SlotConflictError extends Error {
   constructor() {
     super('SLOT_CONFLICT');
   }
 }
+
+export class OutsideHoursError extends Error {
+  constructor() {
+    super('OUTSIDE_HOURS');
+  }
+}
+
+type TenantSchedule = { timezone: string | null; workingHours: unknown };
 
 // الحجز يشغل الموظف إذا لم يكن ملغيًا، وحجز العربون المؤقت المنتهي لا يُحتسب
 function blockingStatusFilter(now: Date): Prisma.AppointmentWhereInput {
@@ -18,38 +36,137 @@ function blockingStatusFilter(now: Date): Prisma.AppointmentWhereInput {
   };
 }
 
-// ينشئ الحجز داخل معاملة Serializable بعد التأكد أن الموظف غير مشغول في
-// نفس الفترة، حتى لا يمر حجزان متزامنان لنفس الموظف. بدون موظف محدد لا يوجد
-// شيء يتعارض معه فيُنشأ الحجز مباشرة.
+function staffHours(staff: { workingHours: unknown }, tenant: TenantSchedule): WeeklyHours {
+  return resolveHours(staff.workingHours ?? tenant.workingHours);
+}
+
+async function hasConflict(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  employeeId: string,
+  start: Date,
+  end: Date
+) {
+  const found = await tx.appointment.findFirst({
+    where: {
+      tenantId,
+      employeeId,
+      startTime: { lt: end },
+      endTime: { gt: start },
+      AND: [blockingStatusFilter(new Date())],
+    },
+    select: { id: true },
+  });
+  return Boolean(found);
+}
+
+// ينشئ الحجز داخل معاملة Serializable: يتحقق من ساعات الدوام والتعارض، وإذا
+// لم يُحدَّد موظف وللصالون موظفون فيُسند الحجز تلقائيًا لأول موظف متاح.
 export async function createAppointmentGuarded<T extends Prisma.AppointmentInclude | undefined = undefined>(
   data: Prisma.AppointmentUncheckedCreateInput & { startTime: Date; endTime: Date },
+  opts: { tenant: TenantSchedule; enforceHours: boolean; autoAssign: boolean },
   include?: T
 ) {
-  const { tenantId, employeeId, startTime, endTime } = data;
+  const { tenantId, startTime, endTime } = data;
+  const tz = opts.tenant.timezone || DEFAULT_TIMEZONE;
 
   return prisma.$transaction(
     async (tx) => {
+      let employeeId = data.employeeId ?? null;
+
       if (employeeId && tenantId) {
-        const conflict = await tx.appointment.findFirst({
-          where: {
-            tenantId,
-            employeeId,
-            startTime: { lt: endTime },
-            endTime: { gt: startTime },
-            AND: [blockingStatusFilter(new Date())],
-          },
-          select: { id: true },
-        });
-        if (conflict) throw new SlotConflictError();
+        const staff = await tx.staff.findFirst({ where: { id: employeeId, tenantId } });
+        if (!staff) throw new SlotConflictError();
+        if (opts.enforceHours && !fitsWorkingHours(startTime, endTime, tz, staffHours(staff, opts.tenant))) {
+          throw new OutsideHoursError();
+        }
+        if (await hasConflict(tx, tenantId, employeeId, startTime, endTime)) throw new SlotConflictError();
+      } else if (tenantId) {
+        const activeStaff = opts.autoAssign
+          ? await tx.staff.findMany({ where: { tenantId, status: 'ACTIVE' }, orderBy: { createdAt: 'asc' } })
+          : [];
+
+        if (activeStaff.length > 0) {
+          let sawWorking = false;
+          for (const staff of activeStaff) {
+            if (!fitsWorkingHours(startTime, endTime, tz, staffHours(staff, opts.tenant))) continue;
+            sawWorking = true;
+            if (!(await hasConflict(tx, tenantId, staff.id, startTime, endTime))) {
+              employeeId = staff.id;
+              break;
+            }
+          }
+          if (!employeeId) throw sawWorking || !opts.enforceHours ? new SlotConflictError() : new OutsideHoursError();
+        } else if (opts.enforceHours && !fitsWorkingHours(startTime, endTime, tz, resolveHours(opts.tenant.workingHours))) {
+          throw new OutsideHoursError();
+        }
       }
-      return tx.appointment.create({ data, include });
+
+      return tx.appointment.create({ data: { ...data, employeeId }, include });
     },
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
   );
 }
 
-// أخطاء التسلسل (تزامن حقيقي) تُعامل كتعارض أيضًا
 export function isSlotConflict(error: unknown): boolean {
   if (error instanceof SlotConflictError) return true;
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034';
+}
+
+export function isOutsideHours(error: unknown): boolean {
+  return error instanceof OutsideHoursError;
+}
+
+// المواعيد المتاحة ليوم معين (YYYY-MM-DD بتوقيت الصالون) لخدمة مدتها durationMinutes.
+// employeeId اختياري: بدونه يظهر الموعد إذا كان أي موظف متاحًا.
+export async function computeSlots(params: {
+  tenant: TenantSchedule & { id: string; minBookingNoticeHours: number };
+  date: string;
+  durationMinutes: number;
+  employeeId?: string;
+}): Promise<string[]> {
+  const { tenant, date, durationMinutes, employeeId } = params;
+  const tz = tenant.timezone || DEFAULT_TIMEZONE;
+  const salonHours = resolveHours(tenant.workingHours);
+
+  const staffList = await prisma.staff.findMany({
+    where: { tenantId: tenant.id, status: 'ACTIVE', ...(employeeId ? { id: employeeId } : {}) },
+  });
+  if (employeeId && staffList.length === 0) return [];
+
+  const dayStart = zonedToUtc(date, '00:00', tz);
+  const dayEnd = new Date(dayStart.getTime() + 24 * 3600 * 1000);
+  const busy = await prisma.appointment.findMany({
+    where: {
+      tenantId: tenant.id,
+      employeeId: { in: staffList.map((s) => s.id) },
+      startTime: { lt: dayEnd },
+      endTime: { gt: dayStart },
+      AND: [blockingStatusFilter(new Date())],
+    },
+    select: { employeeId: true, startTime: true, endTime: true },
+  });
+
+  const earliest = Date.now() + tenant.minBookingNoticeHours * 3600 * 1000;
+  const weekday = String(weekdayOfDate(date));
+  // صالون بدون موظفين: نستخدم دوام الصالون فقط (لا يوجد ما نتحقق من تعارضه)
+  const resources = staffList.length > 0 ? staffList.map((s) => ({ id: s.id, hours: staffHours(s, tenant) })) : [{ id: null, hours: salonHours }];
+
+  const slots: string[] = [];
+  for (let m = 0; m < 24 * 60; m += SLOT_STEP_MINUTES) {
+    const hh = String(Math.floor(m / 60)).padStart(2, '0');
+    const mm = String(m % 60).padStart(2, '0');
+    const start = zonedToUtc(date, `${hh}:${mm}`, tz);
+    const end = new Date(start.getTime() + durationMinutes * 60000);
+    if (start.getTime() < earliest) continue;
+
+    const free = resources.some((r) => {
+      const day = r.hours[weekday];
+      if (!day || m < toMinutes(day.open)) return false;
+      if (!fitsWorkingHours(start, end, tz, r.hours)) return false;
+      return !busy.some((b) => b.employeeId === r.id && b.startTime! < end && b.endTime! > start);
+    });
+    if (free) slots.push(start.toISOString());
+  }
+  return slots;
 }

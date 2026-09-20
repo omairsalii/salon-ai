@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCustomerSession } from '@/lib/customerSession';
-import { createAppointmentGuarded, isSlotConflict } from '@/lib/availability';
+import { createAppointmentGuarded, isOutsideHours, isSlotConflict } from '@/lib/availability';
 
 const DIRECTLY_APPLICABLE_OFFER_TYPES = ['PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SERVICE'];
 
@@ -150,7 +150,7 @@ export async function POST(request: Request) {
       startTime: startDateTime,
       endTime: endDateTime,
       holdExpiresAt: new Date(Date.now() + 15 * 60 * 1000), // حجز مؤقت لمدة 15 دقيقة
-    });
+    }, { tenant, enforceHours: true, autoAssign: true });
 
     return NextResponse.json(
       {
@@ -161,6 +161,9 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error: any) {
+    if (isOutsideHours(error)) {
+      return NextResponse.json({ success: false, error: 'الوقت المختار خارج ساعات الدوام' }, { status: 400 });
+    }
     if (isSlotConflict(error)) {
       return NextResponse.json(
         { success: false, error: 'هذا الموظف محجوز في هذا الوقت، اختر وقتًا أو موظفًا آخر' },

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
+import { parseWeeklyHours } from '@/lib/schedule';
 
 export async function GET() {
   const session = await getSession();
@@ -39,9 +40,19 @@ export async function PATCH(request: Request) {
       minBookingNoticeHours,
     } = body;
 
+    let workingHoursUpdate = {};
+    if (body.workingHours !== undefined) {
+      const parsed = parseWeeklyHours(body.workingHours);
+      if (!parsed) {
+        return NextResponse.json({ success: false, error: 'ساعات الدوام غير صالحة' }, { status: 400 });
+      }
+      workingHoursUpdate = { workingHours: parsed };
+    }
+
     const tenant = await prisma.tenant.update({
       where: { id: session.tenantId },
       data: {
+        ...workingHoursUpdate,
         ...(name ? { name } : {}),
         ...(city !== undefined ? { city: city || null } : {}),
         ...(workingHoursText !== undefined ? { workingHoursText: workingHoursText || null } : {}),

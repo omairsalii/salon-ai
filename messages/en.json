@@ -163,7 +163,19 @@
     "isPublished": "Salon visible to customers",
     "isPublishedWarning": "Turning this off completely hides your salon from customer pages and search.",
     "depositPercentage": "Deposit percentage (%)",
-    "minBookingNoticeHours": "Minimum booking notice (hours)"
+    "minBookingNoticeHours": "Minimum booking notice (hours)",
+    "weeklyHours": "Weekly working hours",
+    "weeklyHoursHint": "Used to show customers available slots and block bookings outside opening hours.",
+    "closed": "Closed",
+    "day0": "Sunday",
+    "day1": "Monday",
+    "day2": "Tuesday",
+    "day3": "Wednesday",
+    "day4": "Thursday",
+    "day5": "Friday",
+    "day6": "Saturday",
+    "staffOwnHours": "Custom working hours for this staff member",
+    "followsSalonHours": "Follows the salon's working hours."
   },
   "Marketplace": {
     "searchTitle": "Discover and book the best salons with ease",
@@ -196,7 +208,11 @@
     "anyStaff": "No preference",
     "applyOffer": "Apply an offer (optional)",
     "noOffer": "No offer",
-    "finalPrice": "Final price after discount"
+    "finalPrice": "Final price after discount",
+    "date": "Date",
+    "availableTimes": "Available times",
+    "noSlots": "No available times on this day",
+    "pickTime": "Pick a time"
   },
   "Admin": {
     "portalTitle": "Platform Admin",

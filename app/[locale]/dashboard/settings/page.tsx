@@ -2,6 +2,8 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import WeeklyHoursEditor, { initialHours } from '@/components/dashboard/WeeklyHoursEditor';
+import type { WeeklyHours } from '@/lib/schedule';
 
 export default function SettingsPage() {
   const t = useTranslations('Settings');
@@ -14,6 +16,7 @@ export default function SettingsPage() {
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [workingHoursText, setWorkingHoursText] = useState('');
+  const [workingHours, setWorkingHours] = useState<WeeklyHours>(initialHours(null));
   const [currency, setCurrency] = useState('');
   const [timezone, setTimezone] = useState('');
   const [descriptionAr, setDescriptionAr] = useState('');
@@ -32,6 +35,7 @@ export default function SettingsPage() {
         setName(tenant.name || '');
         setCity(tenant.city || '');
         setWorkingHoursText(tenant.workingHoursText || '');
+        setWorkingHours(initialHours(tenant.workingHours));
         setCurrency(tenant.currency || '');
         setTimezone(tenant.timezone || '');
         setDescriptionAr(tenant.description?.ar || '');
@@ -59,6 +63,7 @@ export default function SettingsPage() {
           name,
           city,
           workingHoursText,
+          workingHours,
           currency,
           timezone,
           descriptionAr,
@@ -107,6 +112,11 @@ export default function SettingsPage() {
             placeholder="مثال: 01:00 م - 11:00 م"
             className="w-full px-3 py-2 border rounded-md text-black"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">{t('weeklyHours')}</label>
+          <p className="text-xs text-stone-500 mb-2">{t('weeklyHoursHint')}</p>
+          <WeeklyHoursEditor value={workingHours} onChange={setWorkingHours} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

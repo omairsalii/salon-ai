@@ -2,6 +2,8 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import WeeklyHoursEditor, { initialHours } from '@/components/dashboard/WeeklyHoursEditor';
+import type { WeeklyHours } from '@/lib/schedule';
 
 interface StaffRow {
   id: string;
@@ -9,11 +11,13 @@ interface StaffRow {
   role: string | null;
   phone: string | null;
   status: string;
+  workingHours: unknown;
 }
 
 export default function StaffPage() {
   const t = useTranslations('Staff');
   const common = useTranslations('Common');
+  const settings = useTranslations('Settings');
 
   const [staff, setStaff] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +27,7 @@ export default function StaffPage() {
   const [role, setRole] = useState('');
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState('ACTIVE');
+  const [ownHours, setOwnHours] = useState<WeeklyHours | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -44,6 +49,7 @@ export default function StaffPage() {
     setRole('');
     setPhone('');
     setStatus('ACTIVE');
+    setOwnHours(null);
     setError('');
   };
 
@@ -53,6 +59,7 @@ export default function StaffPage() {
     setRole(s.role || '');
     setPhone(s.phone || '');
     setStatus(s.status);
+    setOwnHours(s.workingHours ? initialHours(s.workingHours) : null);
     setShowForm(true);
   };
 
@@ -67,7 +74,7 @@ export default function StaffPage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, role, phone, status }),
+        body: JSON.stringify({ name, role, phone, status, ...(editingId ? { workingHours: ownHours } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل الحفظ');
@@ -124,6 +131,23 @@ export default function StaffPage() {
               </select>
             </div>
           </div>
+          {editingId && (
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-stone-700 mb-2">
+                <input
+                  type="checkbox"
+                  checked={ownHours !== null}
+                  onChange={(e) => setOwnHours(e.target.checked ? initialHours(null) : null)}
+                />
+                {settings('staffOwnHours')}
+              </label>
+              {ownHours ? (
+                <WeeklyHoursEditor value={ownHours} onChange={setOwnHours} />
+              ) : (
+                <p className="text-xs text-stone-500">{settings('followsSalonHours')}</p>
+              )}
+            </div>
+          )}
           <div className="flex gap-2">
             <button type="submit" disabled={saving} className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm disabled:opacity-50">
               {saving ? '...' : common('save')}

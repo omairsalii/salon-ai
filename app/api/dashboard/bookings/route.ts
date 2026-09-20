@@ -80,6 +80,14 @@ export async function POST(request: Request) {
         startTime: startDateTime,
         endTime: endDateTime,
       },
+      {
+        tenant: (await prisma.tenant.findUnique({
+          where: { id: session.tenantId },
+          select: { timezone: true, workingHours: true },
+        }))!,
+        enforceHours: false, // المالك يقدر يضيف حجزًا خارج الدوام يدويًا
+        autoAssign: false,
+      },
       { service: true, customer: true, employee: true }
     );
 

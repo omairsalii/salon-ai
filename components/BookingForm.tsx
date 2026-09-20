@@ -47,6 +47,10 @@ export default function BookingForm({
   const [employeeId, setEmployeeId] = useState('');
   const [offerId, setOfferId] = useState('');
   const [startTime, setStartTime] = useState('');
+  const [date, setDate] = useState('');
+  const [slots, setSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [timezone, setTimezone] = useState('Asia/Bahrain');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -66,6 +70,29 @@ export default function BookingForm({
       })
       .catch(() => {});
   }, [tenantId]);
+
+  useEffect(() => {
+    setStartTime('');
+    if (!date) {
+      setSlots([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingSlots(true);
+    const qs = new URLSearchParams({ serviceId: service.id, date, ...(employeeId ? { employeeId } : {}) });
+    fetch(`/api/salons/${tenantId}/availability?${qs}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        setSlots(data.success ? data.data.slots : []);
+        if (data.success && data.data.timezone) setTimezone(data.data.timezone);
+      })
+      .catch(() => !cancelled && setSlots([]))
+      .finally(() => !cancelled && setLoadingSlots(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantId, service.id, date, employeeId]);
 
   const selectedOffer = useMemo(() => offers.find((o) => o.id === offerId) || null, [offers, offerId]);
 
@@ -195,15 +222,42 @@ export default function BookingForm({
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('dateTime')}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('date')}</label>
                 <input
-                  type="datetime-local"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
+                  type="date"
+                  value={date}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setDate(e.target.value)}
                   required
                   className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
+
+              {date && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('availableTimes')}</label>
+                  {loadingSlots ? (
+                    <p className="text-xs text-gray-400">...</p>
+                  ) : slots.length === 0 ? (
+                    <p className="text-sm text-gray-500 bg-gray-50 rounded-md px-3 py-2">{t('noSlots')}</p>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                      {slots.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setStartTime(s)}
+                          className={`py-1.5 rounded-md text-sm border transition ${
+                            startTime === s ? 'bg-black text-white border-black' : 'bg-white text-gray-700 hover:border-gray-400'
+                          }`}
+                        >
+                          {new Date(s).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: timezone })}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {selectedOffer && finalPrice !== null && (
                 <p className="text-sm font-medium text-emerald-700 bg-emerald-50 rounded-md px-3 py-2">
@@ -224,7 +278,7 @@ export default function BookingForm({
               <div className="flex gap-2 pt-2">
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || !startTime}
                   className="flex-1 bg-black text-white py-2 rounded-md text-sm font-medium hover:bg-gray-800 transition disabled:opacity-50"
                 >
                   {submitting ? t('submitting') : t('confirmBooking')}
