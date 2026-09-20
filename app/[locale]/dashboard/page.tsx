@@ -2,6 +2,8 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
+import Link from 'next/link';
+import { resolveSubscription } from '@/lib/subscription';
 import AnalyticsPanel from '@/components/dashboard/AnalyticsPanel';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -30,7 +32,7 @@ export default async function DashboardOverviewPage({
 
   const tenantInfo = await prisma.tenant.findUnique({
     where: { id: session.tenantId },
-    select: { timezone: true, currency: true },
+    select: { timezone: true, currency: true, plan: true, trialEndsAt: true },
   });
 
   const [todayAppointments, totalCustomers, recentAppointments] = await Promise.all([
@@ -102,12 +104,21 @@ export default async function DashboardOverviewPage({
         </div>
       </div>
 
+      {tenantInfo && resolveSubscription(tenantInfo).analytics ? (
       <AnalyticsPanel
         tenantId={session.tenantId}
         timezone={tenantInfo?.timezone ?? null}
         currency={tenantInfo?.currency || 'BHD'}
         locale={locale}
       />
+      ) : (
+        <div className="mb-8 rounded-2xl border border-dashed border-stone-300 bg-white p-6 text-sm text-stone-600">
+          {t('analyticsLocked')}{' '}
+          <Link href={`/${locale}/dashboard/subscription`} className="font-semibold text-purple-700 underline">
+            {t('viewPlans')}
+          </Link>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
         <h3 className="text-lg font-bold text-stone-900 mb-4">{t('recentBookings')}</h3>

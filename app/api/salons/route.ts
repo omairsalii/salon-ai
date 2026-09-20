@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { TRIAL_DAYS } from '@/lib/plans';
 import { clientIp, limitOrResponse } from '@/lib/rateLimit';
 import { sendVerificationEmail } from '@/lib/verification';
 import { prisma } from '@/lib/prisma';
@@ -147,6 +148,7 @@ export async function POST(request: Request) {
           addressText: addressText || null,
           latitude: lat ? parseFloat(lat) : null,
           longitude: lng ? parseFloat(lng) : null,
+          trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 86400000),
         },
       });
 

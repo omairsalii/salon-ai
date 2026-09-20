@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getTenantSubscription, upgradeRequired } from '@/lib/subscription';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 
@@ -26,6 +27,11 @@ export async function POST(request: Request) {
   }
 
   try {
+    const sub = await getTenantSubscription(session.tenantId);
+    if (sub && !sub.offers) {
+      return upgradeRequired('العروض والخصومات متاحة في الباقة الاحترافية أو أعلى');
+    }
+
     const body = await request.json();
     const { type, discountPercent, discountAmount, appliesToServiceId, freeServiceId, endsAt } = body;
 

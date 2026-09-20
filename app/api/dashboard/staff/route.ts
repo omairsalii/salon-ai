@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
+import { getTenantSubscription, upgradeRequired } from '@/lib/subscription';
 
 export async function GET() {
   const session = await getSession();
@@ -28,6 +29,18 @@ export async function POST(request: Request) {
 
     if (!name) {
       return NextResponse.json({ success: false, error: 'اسم الموظف مطلوب' }, { status: 400 });
+    }
+
+    const sub = await getTenantSubscription(session.tenantId);
+    if (sub && sub.maxStaff !== null) {
+      const count = await prisma.staff.count({ where: { tenantId: session.tenantId } });
+      if (count >= sub.maxStaff) {
+        return upgradeRequired(
+          sub.trialExpired
+            ? 'انتهت الفترة التجريبية، اختر باقة للمتابعة'
+            : `باقتك الحالية تسمح بـ ${sub.maxStaff} موظفين كحد أقصى، رقّ باقتك لإضافة المزيد`
+        );
+      }
     }
 
     const member = await prisma.staff.create({

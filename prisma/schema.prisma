@@ -28,6 +28,8 @@ model Tenant {
   depositPercentage Int         @default(30) @map("deposit_percentage")
   minBookingNoticeHours Int     @default(2) @map("min_booking_notice_hours")
   cancellationHours Int         @default(24) @map("cancellation_hours")
+  plan            String        @default("TRIAL") @db.VarChar(20)
+  trialEndsAt     DateTime?     @map("trial_ends_at") @db.Timestamp(6)
   createdAt       DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt       DateTime?     @updatedAt @map("updated_at") @db.Timestamp(6)
 

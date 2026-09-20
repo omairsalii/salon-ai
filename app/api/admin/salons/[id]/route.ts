@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminSession';
+import { isPaidPlan } from '@/lib/plans';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const guard = await requireAdmin();
@@ -42,11 +43,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       isPublished,
       depositPercentage,
       minBookingNoticeHours,
+      plan,
+      extendTrialDays,
     } = body;
+
+    const current = await prisma.tenant.findUnique({ where: { id }, select: { trialEndsAt: true } });
+    const existingTrialEnd = current?.trialEndsAt?.getTime() ?? 0;
 
     const tenant = await prisma.tenant.update({
       where: { id },
       data: {
+        ...(plan && (plan === 'TRIAL' || isPaidPlan(plan)) ? { plan } : {}),
+        ...(Number.isInteger(extendTrialDays) && extendTrialDays > 0 && extendTrialDays <= 365
+          ? { trialEndsAt: new Date(Math.max(Date.now(), existingTrialEnd) + extendTrialDays * 86400000) }
+          : {}),
         ...(name ? { name } : {}),
         ...(city !== undefined ? { city: city || null } : {}),
         ...(addressText !== undefined ? { addressText: addressText || null } : {}),

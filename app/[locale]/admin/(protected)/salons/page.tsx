@@ -10,6 +10,8 @@ interface TenantRow {
   name: string;
   city: string | null;
   isPublished: boolean;
+  plan: string;
+  trialEndsAt: string | null;
   createdAt: string | null;
   owner: { email: string; name: string } | null;
 }
@@ -34,6 +36,15 @@ export default function AdminSalonsPage() {
   useEffect(() => {
     load();
   }, []);
+
+  const patchTenant = async (id: string, patch: Record<string, unknown>) => {
+    await fetch(`/api/admin/salons/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    await load();
+  };
 
   const togglePublished = async (tenant: TenantRow) => {
     setTogglingId(tenant.id);
@@ -63,6 +74,7 @@ export default function AdminSalonsPage() {
                 <th className="p-3">{t('ownerEmail')}</th>
                 <th className="p-3">{t('city')}</th>
                 <th className="p-3">{t('status')}</th>
+                <th className="p-3">{t('plan')}</th>
                 <th className="p-3">{t('createdAt')}</th>
                 <th className="p-3">{t('editSalon')}</th>
               </tr>
@@ -73,6 +85,24 @@ export default function AdminSalonsPage() {
                   <td className="p-3 font-medium text-slate-900">{tenant.name}</td>
                   <td className="p-3" dir="ltr">{tenant.owner?.email || '—'}</td>
                   <td className="p-3">{tenant.city || '—'}</td>
+                  <td className="p-3">
+                    <select
+                      value={tenant.plan}
+                      onChange={(e) => patchTenant(tenant.id, { plan: e.target.value })}
+                      className="border rounded-md text-xs p-1 text-black"
+                    >
+                      <option value="TRIAL">TRIAL</option>
+                      <option value="BASIC">BASIC</option>
+                      <option value="PROFESSIONAL">PROFESSIONAL</option>
+                      <option value="ENTERPRISE">ENTERPRISE</option>
+                    </select>
+                    {tenant.plan === 'TRIAL' && (
+                      <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                        <span>{tenant.trialEndsAt ? new Date(tenant.trialEndsAt).toLocaleDateString() : '—'}</span>
+                        <button onClick={() => patchTenant(tenant.id, { extendTrialDays: 14 })} className="text-blue-600 hover:underline">+14d</button>
+                      </div>
+                    )}
+                  </td>
                   <td className="p-3">
                     <button
                       onClick={() => togglePublished(tenant)}

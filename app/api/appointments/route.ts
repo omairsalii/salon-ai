@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { clientIp, limitOrResponse } from '@/lib/rateLimit';
 import { prisma } from '@/lib/prisma';
 import { getCustomerSession } from '@/lib/customerSession';
+import { resolveSubscription } from '@/lib/subscription';
 import { notifyBooking } from '@/lib/notify';
 import { createAppointmentGuarded, isOutsideHours, isSlotConflict } from '@/lib/availability';
 
@@ -44,6 +45,13 @@ export async function POST(request: Request) {
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant || !tenant.isPublished) {
       return NextResponse.json({ success: false, error: 'Salon not found' }, { status: 404 });
+    }
+
+    if (!resolveSubscription(tenant).bookingEnabled) {
+      return NextResponse.json(
+        { success: false, error: 'هذا الصالون لا يستقبل حجوزات جديدة حاليًا' },
+        { status: 403 }
+      );
     }
 
     if (employeeId) {
