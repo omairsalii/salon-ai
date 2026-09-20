@@ -76,6 +76,12 @@ export default function LoginPage() {
             />
           </div>
 
+          <p className="text-left text-sm">
+            <a href={`/${locale}/forgot-password?audience=owner`} className="text-blue-600 hover:underline">
+              نسيت كلمة المرور؟
+            </a>
+          </p>
+
           <button
             type="submit"
             disabled={loading}

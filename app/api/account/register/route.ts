@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
+import { clientIp, limitOrResponse } from '@/lib/rateLimit';
+import { sendVerificationEmail } from '@/lib/verification';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/password';
 import { createCustomerSession } from '@/lib/customerSession';
 
 export async function POST(request: Request) {
   try {
+    const limited = limitOrResponse(`register-customer:${clientIp(request)}`, 10, 60 * 60 * 1000);
+    if (limited) return limited;
+
     const body = await request.json();
     const { name, email, password } = body;
 
@@ -37,6 +42,7 @@ export async function POST(request: Request) {
       data: { name, email: normalizedEmail, passwordHash },
     });
 
+    await sendVerificationEmail(request, 'customer', account.id, account.email).catch((e) => console.error('verification email failed', e));
     await createCustomerSession({ accountId: account.id, email: account.email, name: account.name });
 
     return NextResponse.json({ success: true }, { status: 201 });

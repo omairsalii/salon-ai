@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
+import VerifyEmailBanner from '@/components/VerifyEmailBanner';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 
 export default async function DashboardLayout({
@@ -29,6 +30,7 @@ export default async function DashboardLayout({
 
   return (
     <DashboardShell locale={locale} tenantName={tenant.name}>
+      <VerifyEmailBanner audience="owner" />
       {children}
     </DashboardShell>
   );

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { clientIp, limitOrResponse } from '@/lib/rateLimit';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/password';
 import { createAdminSession } from '@/lib/adminSession';
@@ -8,6 +9,9 @@ import { createAdminSession } from '@/lib/adminSession';
 // أو يُشارك — أول من يقدّم هذا النموذج يصبح الأدمن.
 export async function POST(request: Request) {
   try {
+    const limited = limitOrResponse(`register-admin:${clientIp(request)}`, 10, 60 * 60 * 1000);
+    if (limited) return limited;
+
     const existingCount = await prisma.admin.count();
     if (existingCount > 0) {
       return NextResponse.json(

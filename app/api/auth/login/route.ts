@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { clientIp, limitOrResponse } from '@/lib/rateLimit';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword } from '@/lib/password';
 import { createSession } from '@/lib/session';
@@ -15,6 +16,11 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    const limited =
+      limitOrResponse(`login-owner:ip:${clientIp(request)}`, 40, 15 * 60 * 1000) ||
+      limitOrResponse(`login-owner:email:${email}`, 10, 15 * 60 * 1000);
+    if (limited) return limited;
 
     const owner = await prisma.owner.findUnique({ where: { email } });
     if (!owner) {

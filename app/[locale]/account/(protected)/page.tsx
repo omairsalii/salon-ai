@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { getCustomerSession } from '@/lib/customerSession';
 import { prisma } from '@/lib/prisma';
 import { describeOffer } from '@/lib/offers';
+import VerifyEmailBanner from '@/components/VerifyEmailBanner';
 import LogoutButton from '@/components/account/LogoutButton';
 
 function serviceDisplayName(svc: { name: unknown } | null, locale: string): string {
@@ -73,6 +74,8 @@ export default async function AccountPage({
           </div>
           <LogoutButton />
         </header>
+
+        <VerifyEmailBanner audience="customer" />
 
         <section className="mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4">{t('notifications')}</h2>

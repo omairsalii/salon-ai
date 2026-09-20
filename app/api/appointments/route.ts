@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { clientIp, limitOrResponse } from '@/lib/rateLimit';
 import { prisma } from '@/lib/prisma';
 import { getCustomerSession } from '@/lib/customerSession';
 import { createAppointmentGuarded, isOutsideHours, isSlotConflict } from '@/lib/availability';
@@ -13,8 +14,11 @@ const DIRECTLY_APPLICABLE_OFFER_TYPES = ['PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SER
 // الاسم/الجوال فقط، حتى يظهر الحجز بسجل حجوزاته لاحقًا مهما كان الصالون.
 export async function POST(request: Request) {
   try {
+    const limited = limitOrResponse(`book:${clientIp(request)}`, 20, 60 * 60 * 1000);
+    if (limited) return limited;
+
     const body = await request.json();
-    const { tenantId, customerId, customerName, customerPhone, serviceId, employeeId, offerId, startTime } = body;
+    const { tenantId, customerName, customerPhone, serviceId, employeeId, offerId, startTime } = body;
 
     // التحقق من الحقول الأساسية المطلوبة
     if (!tenantId || !serviceId || !startTime) {
@@ -67,7 +71,8 @@ export async function POST(request: Request) {
     // إيجاد أو إنشاء سجل العميل — مرتبط بحساب العميل لو مسجّل دخوله، وإلا
     // بالاسم والجوال كضيف (نفس السلوك السابق تمامًا)
     const customerSession = await getCustomerSession();
-    let resolvedCustomerId: string | null = customerId || null;
+    // لا نقبل customerId من العميل أبدًا (نقطة عامة): يُحدَّد من الجلسة أو الاسم/الجوال فقط
+    let resolvedCustomerId: string | null = null;
 
     if (!resolvedCustomerId && customerSession) {
       const existingLinked = await prisma.customer.findFirst({

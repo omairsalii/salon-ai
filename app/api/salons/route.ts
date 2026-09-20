@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { clientIp, limitOrResponse } from '@/lib/rateLimit';
+import { sendVerificationEmail } from '@/lib/verification';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/password';
 import { createSession } from '@/lib/session';
@@ -98,6 +100,9 @@ export async function GET(request: Request) {
 // أي شخص بإيميل صحيح الصيغة يقدر يسجل. هذا قرار مؤجل عن قصد لحين الحاجة له.
 export async function POST(request: Request) {
   try {
+    const limited = limitOrResponse(`register-salon:${clientIp(request)}`, 10, 60 * 60 * 1000);
+    if (limited) return limited;
+
     const body = await request.json();
     const { name, city, addressText, lat, lng, ownerName, email, password } = body;
 
@@ -157,6 +162,7 @@ export async function POST(request: Request) {
       return { tenant, owner };
     });
 
+    await sendVerificationEmail(request, 'owner', owner.id, owner.email).catch((e) => console.error('verification email failed', e));
     await createSession({ ownerId: owner.id, tenantId: tenant.id, email: owner.email });
 
     return NextResponse.json({ success: true, data: tenant }, { status: 201 });
