@@ -122,7 +122,7 @@ export default function SalonGrid({ locale, salons }: { locale: string; salons: 
 
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 gap-2">
                   <span className="text-sm font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-                    {salon.currency || 'SAR'}
+                    {salon.currency || 'BHD'}
                   </span>
                   <div className="flex items-center gap-2">
                     {lat !== null && lng !== null && (

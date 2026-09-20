@@ -15,7 +15,7 @@ model Tenant {
   customDomain    String?       @map("custom_domain") @db.VarChar(255)
   defaultLanguage String?       @default("ar") @map("default_language") @db.VarChar(10)
   timezone        String?       @default("UTC") @db.VarChar(50)
-  currency        String?       @default("USD") @db.VarChar(10)
+  currency        String?       @default("BHD") @db.VarChar(10)
   latitude        Decimal?      @db.Decimal(10, 8)
   longitude       Decimal?      @db.Decimal(11, 8)
   addressText     String?       @map("address_text")

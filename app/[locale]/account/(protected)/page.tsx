@@ -99,7 +99,7 @@ export default async function AccountPage({
                   <div>
                     <p className="font-semibold text-rose-900">{offer.tenant.name}</p>
                     <p className="text-sm text-rose-700 mt-0.5">
-                      {describeOffer(offer as any, locale, 'USD')}
+                      {describeOffer(offer as any, locale, 'BHD')}
                     </p>
                   </div>
                 </div>
@@ -136,7 +136,7 @@ export default async function AccountPage({
                       </td>
                       <td className="p-3">{a.totalAmount ? String(a.totalAmount) : '—'}</td>
                       <td className="p-3">
-                        {a.appliedOffer ? describeOffer(a.appliedOffer as any, locale, 'USD') : (
+                        {a.appliedOffer ? describeOffer(a.appliedOffer as any, locale, 'BHD') : (
                           <span className="text-gray-400">{t('noDiscount')}</span>
                         )}
                       </td>

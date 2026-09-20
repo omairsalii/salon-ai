@@ -83,7 +83,7 @@ export default async function SalonDetailPage({
                 <div>
                   <p className="font-semibold text-rose-900">{tenant.name}</p>
                   <p className="text-sm text-rose-700 mt-0.5">
-                    {describeOffer(offer as any, locale, tenant.currency || 'USD')}
+                    {describeOffer(offer as any, locale, tenant.currency || 'BHD')}
                     {offer.appliesToService && (
                       <>
                         {' — '}
@@ -111,7 +111,7 @@ export default async function SalonDetailPage({
           <ServicesList
             tenantId={tenant.id}
             services={serviceRows}
-            currency={tenant.currency || 'USD'}
+            currency={tenant.currency || 'BHD'}
             depositPercentage={tenant.depositPercentage}
             offers={offers
               .filter((o) => ['PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SERVICE'].includes(o.type))
