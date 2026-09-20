@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
@@ -6,6 +7,35 @@ import ServicesList from '@/components/ServicesList';
 import { DIRECT_OFFER_TYPES, describeOffer } from '@/lib/offers';
 import { getRatings } from '@/lib/ratings';
 import FavoriteButton from '@/components/FavoriteButton';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}): Promise<Metadata> {
+  const { locale, id } = await params;
+  const tenant = await prisma.tenant.findUnique({
+    where: { id },
+    select: { name: true, city: true, description: true, isPublished: true },
+  });
+  if (!tenant || !tenant.isPublished) return {};
+
+  const desc = (tenant.description as Record<string, string> | null) || {};
+  const text =
+    desc[locale] ||
+    desc.ar ||
+    desc.en ||
+    (locale === 'ar'
+      ? `احجز موعدك في ${tenant.name}${tenant.city ? ` — ${tenant.city}` : ''}`
+      : `Book an appointment at ${tenant.name}${tenant.city ? ` — ${tenant.city}` : ''}`);
+
+  return {
+    title: tenant.name,
+    description: text.slice(0, 160),
+    alternates: { languages: { ar: `/ar/salons/${id}`, en: `/en/salons/${id}` } },
+    openGraph: { title: tenant.name, description: text.slice(0, 160), type: 'website' },
+  };
+}
 
 export default async function SalonDetailPage({
   params,
@@ -45,6 +75,18 @@ export default async function SalonDetailPage({
   ]);
   const rating = ratingMap.get(tenant.id);
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'HairSalon',
+    name: tenant.name,
+    ...(tenant.phone ? { telephone: tenant.phone } : {}),
+    address: { '@type': 'PostalAddress', addressLocality: tenant.city ?? undefined, streetAddress: tenant.addressText ?? undefined },
+    ...(tenant.latitude && tenant.longitude
+      ? { geo: { '@type': 'GeoCoordinates', latitude: Number(tenant.latitude), longitude: Number(tenant.longitude) } }
+      : {}),
+    ...(rating ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: rating.avg, reviewCount: rating.count } } : {}),
+  };
+
   const serviceRows = services.map((s) => {
     const name = (s.name as Record<string, string> | null) || {};
     return {
@@ -67,6 +109,10 @@ export default async function SalonDetailPage({
 
   return (
     <main className="min-h-screen bg-gray-50 p-6 md:p-12" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+      />
       <div className="max-w-3xl mx-auto">
         <header className="mb-8">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">

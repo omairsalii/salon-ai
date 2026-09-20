@@ -38,7 +38,10 @@ export function parseWeeklyHours(input: unknown): WeeklyHours | null {
 }
 
 export function resolveHours(stored: unknown): WeeklyHours {
-  return parseWeeklyHours(stored) ?? DEFAULT_HOURS;
+  // كائن بلا أي مفتاح يوم (0-6) يعني بيانات تالفة وليس "مغلق دائمًا"
+  const hasDayKey =
+    !!stored && typeof stored === 'object' && [0, 1, 2, 3, 4, 5, 6].some((d) => String(d) in (stored as object));
+  return (hasDayKey && parseWeeklyHours(stored)) || DEFAULT_HOURS;
 }
 
 function tzOffsetMinutes(at: Date, timeZone: string): number {
