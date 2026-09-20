@@ -10,6 +10,7 @@ interface Sub {
   trialExpired: boolean;
   trialDaysLeft: number;
   staffCount: number;
+  prices: Record<PaidPlanKey, number>;
 }
 
 export default function SubscriptionPage() {
@@ -72,7 +73,7 @@ export default function SubscriptionPage() {
             <div key={key} className={`rounded-2xl border bg-white p-6 shadow-sm ${current ? 'border-purple-500 ring-2 ring-purple-200' : 'border-stone-200'}`}>
               <h2 className="text-lg font-bold text-stone-900">{t(`plan_${key}`)}</h2>
               <p className="mt-2 text-3xl font-extrabold text-stone-900">
-                {p.priceBhdMonthly} <span className="text-sm font-medium text-stone-500">{common('currency')} / {t('perMonth')}</span>
+                {sub.prices?.[key] ?? p.priceBhdMonthly} <span className="text-sm font-medium text-stone-500">{common('currency')} / {t('perMonth')}</span>
               </p>
               <ul className="mt-4 space-y-2 text-sm text-stone-600">
                 <li>✓ {p.maxStaff === null ? t('unlimitedStaff') : t('staffUpTo', { n: p.maxStaff })}</li>

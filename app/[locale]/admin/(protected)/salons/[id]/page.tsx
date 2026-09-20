@@ -3,6 +3,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
+import SalonOverviewPanel from '@/components/admin/SalonOverviewPanel';
 
 export default function AdminEditSalonPage() {
   const t = useTranslations('Admin');
@@ -99,6 +100,8 @@ export default function AdminEditSalonPage() {
       </button>
       <h1 className="text-2xl font-bold text-slate-900 mb-1">{t('editSalon')}</h1>
       {ownerEmail && <p className="text-sm text-slate-500 mb-6" dir="ltr">{t('ownerEmail')}: {ownerEmail}</p>}
+
+      <SalonOverviewPanel salonId={id} />
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 max-w-2xl space-y-4">
         {error && <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{error}</div>}

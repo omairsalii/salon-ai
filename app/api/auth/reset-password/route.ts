@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const token = typeof body.token === 'string' ? body.token : '';
     const password = typeof body.password === 'string' ? body.password : '';
-    const audience = body.audience === 'customer' ? 'customer' : body.audience === 'owner' ? 'owner' : null;
+    const audience = ['owner', 'customer', 'admin'].includes(body.audience) ? (body.audience as 'owner' | 'customer' | 'admin') : null;
 
     if (!token || !audience) {
       return NextResponse.json({ success: false, error: 'رابط غير صالح' }, { status: 400 });
@@ -32,7 +32,9 @@ export async function POST(request: Request) {
     const passwordHash = await hashPassword(password);
     // استلام رابط الاستعادة يثبت ملكية البريد أيضًا
     const data = { passwordHash, emailVerifiedAt: new Date() };
-    if (audience === 'owner') {
+    if (audience === 'admin') {
+      await prisma.admin.update({ where: { id: row.subjectId }, data: { passwordHash, mustChangePassword: false } });
+    } else if (audience === 'owner') {
       await prisma.owner.update({ where: { id: row.subjectId }, data });
     } else {
       await prisma.customerAccount.update({ where: { id: row.subjectId }, data });

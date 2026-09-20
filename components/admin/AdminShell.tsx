@@ -25,6 +25,11 @@ export default function AdminShell({
     { href: base, label: t('overview'), icon: '📊' },
     { href: `${base}/salons`, label: t('salons'), icon: '🏢' },
     { href: `${base}/owners`, label: t('owners'), icon: '🧑‍💼' },
+    { href: `${base}/customers`, label: t('customers'), icon: '👤' },
+    { href: `${base}/bookings`, label: t('bookings'), icon: '📅' },
+    { href: `${base}/reviews`, label: t('reviews'), icon: '⭐' },
+    { href: `${base}/admins`, label: t('admins'), icon: '🛡️' },
+    { href: `${base}/settings`, label: t('platformSettings'), icon: '⚙️' },
     { href: `${base}/audit`, label: t('audit'), icon: '🧾' },
   ];
 
@@ -44,6 +49,7 @@ export default function AdminShell({
           <span className="text-xl font-bold text-white">{common('appName')}</span>
           <p className="text-xs text-slate-400 mt-1">{t('portalTitle')}</p>
           <p className="text-xs text-slate-500 mt-2 truncate" dir="ltr">{adminEmail}</p>
+          <Link href={`${base}/change-password`} className="text-xs text-slate-400 hover:text-white underline">{t('changePassword')}</Link>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {links.map((link) => (

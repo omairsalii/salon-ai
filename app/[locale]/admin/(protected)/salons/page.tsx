@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import ListToolbar from '@/components/admin/ListToolbar';
 
 interface TenantRow {
   id: string;
@@ -22,6 +23,7 @@ export default function AdminSalonsPage() {
   const locale = typeof params.locale === 'string' ? params.locale : 'ar';
 
   const [tenants, setTenants] = useState<TenantRow[]>([]);
+  const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<TenantRow | null>(null);
@@ -30,11 +32,17 @@ export default function AdminSalonsPage() {
 
   const load = async () => {
     setLoading(true);
-    const res = await fetch('/api/admin/salons');
+    const res = await fetch(`/api/admin/salons?q=${encodeURIComponent(q)}`);
     const data = await res.json();
     if (data.success) setTenants(data.data);
     setLoading(false);
   };
+
+  useEffect(() => {
+    const id = setTimeout(load, 250);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
 
   useEffect(() => {
     load();
@@ -79,6 +87,8 @@ export default function AdminSalonsPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-slate-900 mb-6">{t('salons')}</h1>
+
+      <ListToolbar q={q} onQ={setQ} exportType="salons" />
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
         {loading ? (

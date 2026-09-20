@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 const COOKIE_NAME = 'salon_admin_session';
@@ -16,6 +17,7 @@ function getSecretKey() {
 export interface AdminSessionPayload {
   adminId: string;
   email: string;
+  mustChangePassword?: boolean;
 }
 
 // جلسة أدمن منفصلة تمامًا عن جلسة صاحب الصالون — كوكي مختلف الاسم، ولا يمكن
@@ -47,7 +49,13 @@ export async function getAdminSession(): Promise<AdminSessionPayload | null> {
     if (typeof payload.adminId !== 'string' || typeof payload.email !== 'string') {
       return null;
     }
-    return { adminId: payload.adminId, email: payload.email };
+    const admin = await prisma.admin.findUnique({
+      where: { id: payload.adminId },
+      select: { mustChangePassword: true },
+    });
+    if (!admin) return null; // أدمن محذوف: تسقط جلسته فورًا
+
+    return { adminId: payload.adminId, email: payload.email, mustChangePassword: admin.mustChangePassword };
   } catch {
     return null;
   }
@@ -60,10 +68,21 @@ export async function clearAdminSession() {
 
 // حارس للاستخدام داخل مسارات app/api/admin/... — يرجّع استجابة 401 جاهزة
 // إذا ما فيه جلسة أدمن صالحة، أو null إذا كل شي تمام.
-export async function requireAdmin(): Promise<{ response: NextResponse } | { session: AdminSessionPayload }> {
+export async function requireAdmin(
+  opts: { allowMustChange?: boolean } = {}
+): Promise<{ response: NextResponse } | { session: AdminSessionPayload }> {
   const session = await getAdminSession();
   if (!session) {
     return { response: NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 }) };
+  }
+  // حساب أنشأه أدمن آخر بكلمة مرور مؤقتة: لا شيء يعمل قبل تغييرها
+  if (session.mustChangePassword && !opts.allowMustChange) {
+    return {
+      response: NextResponse.json(
+        { success: false, error: 'يجب تغيير كلمة المرور أولًا', code: 'MUST_CHANGE_PASSWORD' },
+        { status: 403 }
+      ),
+    };
   }
   return { session };
 }

@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { prisma } from '@/lib/prisma';
 
 const COOKIE_NAME = 'salon_customer_session';
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 يوم
@@ -51,6 +52,12 @@ export async function getCustomerSession(): Promise<CustomerSessionPayload | nul
     ) {
       return null;
     }
+    const account = await prisma.customerAccount.findUnique({
+      where: { id: payload.accountId },
+      select: { suspendedAt: true },
+    });
+    if (!account || account.suspendedAt) return null;
+
     return { accountId: payload.accountId, email: payload.email, name: payload.name };
   } catch {
     return null;

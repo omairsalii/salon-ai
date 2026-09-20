@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
-    const audience = body.audience === 'customer' ? 'customer' : body.audience === 'owner' ? 'owner' : null;
+    const audience = ['owner', 'customer', 'admin'].includes(body.audience) ? (body.audience as 'owner' | 'customer' | 'admin') : null;
     if (!email || !audience) {
       return NextResponse.json({ success: false, error: 'البريد الإلكتروني مطلوب' }, { status: 400 });
     }
@@ -22,10 +22,12 @@ export async function POST(request: Request) {
 
     const account =
       audience === 'owner'
-        ? await prisma.owner.findUnique({ where: { email }, select: { id: true } })
-        : await prisma.customerAccount.findUnique({ where: { email }, select: { id: true } });
+        ? await prisma.owner.findUnique({ where: { email }, select: { id: true, suspendedAt: true } })
+        : audience === 'admin'
+          ? await prisma.admin.findUnique({ where: { email }, select: { id: true } })
+          : await prisma.customerAccount.findUnique({ where: { email }, select: { id: true, suspendedAt: true } });
 
-    if (account) {
+    if (account && !('suspendedAt' in account && account.suspendedAt)) {
       const locale = localeFromRequest(request);
       const raw = await issueToken('RESET_PASSWORD', audience, account.id, email);
       const link = `${appOrigin(request)}/${locale}/reset-password?audience=${audience}&token=${raw}`;

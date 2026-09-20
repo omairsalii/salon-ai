@@ -12,7 +12,7 @@ export default async function ResetPasswordPage({
   return (
     <ResetPasswordForm
       locale={locale}
-      audience={audience === 'customer' ? 'customer' : 'owner'}
+      audience={audience === 'customer' || audience === 'admin' ? audience : 'owner'}
       token={token || ''}
     />
   );

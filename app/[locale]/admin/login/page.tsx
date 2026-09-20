@@ -55,6 +55,12 @@ export default function AdminLoginPage() {
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required dir="ltr" className="w-full px-3 py-2 border rounded-md text-left" />
           </div>
 
+          <p className="text-sm">
+            <a href={`/${locale}/forgot-password?audience=admin`} className="text-blue-600 hover:underline">
+              {locale === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
+            </a>
+          </p>
+
           <button type="submit" disabled={loading} className="w-full bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800 transition disabled:opacity-50">
             {loading ? '...' : t('login')}
           </button>

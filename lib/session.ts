@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { prisma } from '@/lib/prisma';
 
 const COOKIE_NAME = 'salon_session';
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 يوم
@@ -16,13 +17,16 @@ export interface SessionPayload {
   ownerId: string;
   tenantId: string;
   email: string;
+  // إذا كانت الجلسة صادرة عن أدمن (دخول بدل المالك): بريد الأدمن
+  imp?: string;
 }
 
-export async function createSession(payload: SessionPayload) {
+export async function createSession(payload: SessionPayload, opts: { maxAgeSeconds?: number } = {}) {
+  const maxAge = opts.maxAgeSeconds ?? MAX_AGE_SECONDS;
   const token = await new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime(`${MAX_AGE_SECONDS}s`)
+    .setExpirationTime(`${maxAge}s`)
     .sign(getSecretKey());
 
   const cookieStore = await cookies();
@@ -30,7 +34,7 @@ export async function createSession(payload: SessionPayload) {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: MAX_AGE_SECONDS,
+    maxAge,
     path: '/',
   });
 }
@@ -49,7 +53,19 @@ export async function getSession(): Promise<SessionPayload | null> {
     ) {
       return null;
     }
-    return { ownerId: payload.ownerId, tenantId: payload.tenantId, email: payload.email };
+    // الحساب يجب أن يبقى موجودًا وغير موقوف، وإلا تسقط الجلسة فورًا (حذف/إيقاف من الأدمن)
+    const owner = await prisma.owner.findUnique({
+      where: { id: payload.ownerId },
+      select: { tenantId: true, suspendedAt: true },
+    });
+    if (!owner || owner.suspendedAt || owner.tenantId !== payload.tenantId) return null;
+
+    return {
+      ownerId: payload.ownerId,
+      tenantId: payload.tenantId,
+      email: payload.email,
+      ...(typeof payload.imp === 'string' ? { imp: payload.imp } : {}),
+    };
   } catch {
     return null;
   }

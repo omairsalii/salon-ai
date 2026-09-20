@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
+import ListToolbar from '@/components/admin/ListToolbar';
 
 interface OwnerRow {
   id: string;
   name: string;
   email: string;
   createdAt: string | null;
+  suspendedAt: string | null;
   tenant: { id: string; name: string } | null;
 }
 
@@ -18,18 +20,20 @@ export default function AdminOwnersPage() {
   const locale = typeof params.locale === 'string' ? params.locale : 'ar';
 
   const [owners, setOwners] = useState<OwnerRow[]>([]);
+  const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState<{ ownerEmail: string; password: string } | null>(null);
 
   useEffect(() => {
-    (async () => {
-      const res = await fetch('/api/admin/owners');
+    const id = setTimeout(async () => {
+      const res = await fetch(`/api/admin/owners?q=${encodeURIComponent(q)}`);
       const data = await res.json();
       if (data.success) setOwners(data.data);
       setLoading(false);
-    })();
-  }, []);
+    }, 250);
+    return () => clearTimeout(id);
+  }, [q]);
 
   const handleReset = async (owner: OwnerRow) => {
     if (!confirm(t('resetPasswordConfirm'))) return;
@@ -59,6 +63,8 @@ export default function AdminOwnersPage() {
         </div>
       )}
 
+      <ListToolbar q={q} onQ={setQ} exportType="owners" />
+
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
         {loading ? (
           <p className="p-6 text-center text-slate-400 text-sm">...</p>
@@ -78,7 +84,7 @@ export default function AdminOwnersPage() {
             <tbody>
               {owners.map((owner) => (
                 <tr key={owner.id} className="border-b border-slate-100">
-                  <td className="p-3 font-medium text-slate-900">{owner.name}</td>
+                  <td className="p-3 font-medium text-slate-900">{owner.name}{owner.suspendedAt && <span className="ms-2 text-xs text-red-700">(موقوف)</span>}</td>
                   <td className="p-3" dir="ltr">{owner.email}</td>
                   <td className="p-3">{owner.tenant?.name || '—'}</td>
                   <td className="p-3">

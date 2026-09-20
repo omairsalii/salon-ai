@@ -27,6 +27,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'بيانات الدخول غير صحيحة' }, { status: 401 });
     }
 
+    if (account.suspendedAt) {
+      return NextResponse.json({ success: false, error: 'هذا الحساب موقوف، تواصل مع إدارة المنصة' }, { status: 403 });
+    }
+
     const valid = await verifyPassword(password, account.passwordHash);
     if (!valid) {
       return NextResponse.json({ success: false, error: 'بيانات الدخول غير صحيحة' }, { status: 401 });

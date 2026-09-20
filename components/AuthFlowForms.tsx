@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, FormEvent } from 'react';
 
-type Audience = 'owner' | 'customer';
+type Audience = 'owner' | 'customer' | 'admin';
 
 const copy = {
   ar: {
@@ -51,7 +51,7 @@ function Card({ locale, title, children }: { locale: string; title: string; chil
 }
 
 const loginPath = (locale: string, audience: Audience) =>
-  audience === 'owner' ? `/${locale}/login` : `/${locale}/account/login`;
+  audience === 'owner' ? `/${locale}/login` : audience === 'admin' ? `/${locale}/admin/login` : `/${locale}/account/login`;
 
 export function ForgotPasswordForm({ locale, audience }: { locale: string; audience: Audience }) {
   const c = copy[locale === 'en' ? 'en' : 'ar'];

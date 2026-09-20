@@ -30,6 +30,10 @@ export async function POST(request: Request) {
       );
     }
 
+    if (owner.suspendedAt) {
+      return NextResponse.json({ success: false, error: 'هذا الحساب موقوف، تواصل مع إدارة المنصة' }, { status: 403 });
+    }
+
     const valid = await verifyPassword(password, owner.passwordHash);
     if (!valid) {
       return NextResponse.json(

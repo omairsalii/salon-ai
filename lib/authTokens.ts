@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 
 export type TokenPurpose = 'RESET_PASSWORD' | 'VERIFY_EMAIL';
-export type TokenAudience = 'owner' | 'customer';
+export type TokenAudience = 'owner' | 'customer' | 'admin';
 
 const TTL_MS: Record<TokenPurpose, number> = {
   RESET_PASSWORD: 60 * 60 * 1000, // ساعة

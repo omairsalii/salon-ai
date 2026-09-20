@@ -9,5 +9,5 @@ export default async function ForgotPasswordPage({
 }) {
   const { locale } = await params;
   const { audience } = await searchParams;
-  return <ForgotPasswordForm locale={locale} audience={audience === 'customer' ? 'customer' : 'owner'} />;
+  return <ForgotPasswordForm locale={locale} audience={audience === 'customer' || audience === 'admin' ? audience : 'owner'} />;
 }

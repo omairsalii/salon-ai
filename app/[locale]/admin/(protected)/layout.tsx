@@ -17,6 +17,10 @@ export default async function AdminLayout({
     redirect(`/${locale}/admin/login`);
   }
 
+  if (session.mustChangePassword) {
+    redirect(`/${locale}/admin/change-password`);
+  }
+
   return (
     <AdminShell locale={locale} adminEmail={session.email}>
       {children}

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { isPaidPlan } from '@/lib/plans';
 import { resolveSubscription } from '@/lib/subscription';
+import { getPlatformSettings } from '@/lib/platformSettings';
 
 export async function GET() {
   const session = await getSession();
@@ -15,7 +16,8 @@ export async function GET() {
   if (!tenant) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
 
   const staffCount = await prisma.staff.count({ where: { tenantId: session.tenantId } });
-  return NextResponse.json({ success: true, data: { ...resolveSubscription(tenant), staffCount } });
+  const { prices } = await getPlatformSettings();
+  return NextResponse.json({ success: true, data: { ...resolveSubscription(tenant), staffCount, prices } });
 }
 
 // اختيار باقة. لا توجد بوابة دفع بعد: الاختيار يُطبَّق مباشرة (وضع الهيكل).
