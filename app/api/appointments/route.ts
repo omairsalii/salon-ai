@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { clientIp, limitOrResponse } from '@/lib/rateLimit';
 import { prisma } from '@/lib/prisma';
 import { getCustomerSession } from '@/lib/customerSession';
@@ -178,7 +178,7 @@ export async function POST(request: Request) {
       holdExpiresAt: new Date(Date.now() + 15 * 60 * 1000), // حجز مؤقت لمدة 15 دقيقة
     }, { tenant, enforceHours: true, autoAssign: true });
 
-    void notifyBooking(newAppointment.id, 'created', ['owner', 'customer']);
+    after(() => notifyBooking(newAppointment.id, 'created', ['owner', 'customer']));
 
     return NextResponse.json(
       {

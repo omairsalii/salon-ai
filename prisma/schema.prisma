@@ -5,6 +5,8 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // اتصال مباشر (بدون pooler) لأوامر الهجرة على Supabase؛ اختياري محليًا
+  directUrl = env("DIRECT_URL")
 }
 
 model Tenant {

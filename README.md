@@ -58,6 +58,10 @@ npx prisma migrate resolve --applied <timestamp>_name
 npx prisma generate
 ```
 
+## Deployment
+
+خطوات النشر على Vercel + Supabase في [DEPLOY.md](DEPLOY.md).
+
 ## Production checklist
 
 - [ ] استضافة مع PostgreSQL + PostGIS، ونسخ احتياطي تلقائي

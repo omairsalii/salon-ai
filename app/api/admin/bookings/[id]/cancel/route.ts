@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminSession';
 import { logAdminAction } from '@/lib/audit';
@@ -16,7 +16,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   }
 
   await prisma.appointment.update({ where: { id }, data: { status: 'CANCELLED' } });
-  void notifyBooking(id, 'cancelled', ['owner', 'customer']);
+  after(() => notifyBooking(id, 'cancelled', ['owner', 'customer']));
   await logAdminAction(guard.session, { action: 'BOOKING_CANCEL', targetType: 'BOOKING', targetId: id, targetLabel: appt.tenant?.name });
   return NextResponse.json({ success: true });
 }

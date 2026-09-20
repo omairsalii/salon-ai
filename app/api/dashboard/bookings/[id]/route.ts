@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { hasConflict } from '@/lib/availability';
@@ -44,7 +44,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     });
 
     if (status === 'CANCELLED' && existing.status !== 'CANCELLED') {
-      void notifyBooking(id, 'cancelled', ['customer']);
+      after(() => notifyBooking(id, 'cancelled', ['customer']));
     }
 
     return NextResponse.json({ success: true, data: appointment }, { status: 200 });

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { loadOwnedAppointment } from '@/lib/customerAppointments';
 import { isOutsideHours, isSlotConflict, rescheduleAppointmentGuarded } from '@/lib/availability';
 import { notifyBooking } from '@/lib/notify';
@@ -26,7 +26,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const updated = await rescheduleAppointmentGuarded(id, newStart, tenant);
-    void notifyBooking(id, 'rescheduled', ['owner', 'customer']);
+    after(() => notifyBooking(id, 'rescheduled', ['owner', 'customer']));
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {
     if (isOutsideHours(error)) {

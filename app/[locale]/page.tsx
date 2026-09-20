@@ -1,15 +1,14 @@
 import { getTranslations } from 'next-intl/server';
 import SalonGrid from '@/components/SalonGrid';
+import { listPublicSalons } from '@/lib/publicSalons';
+
+export const dynamic = 'force-dynamic';
 
 async function getSalons() {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    const res = await fetch(`${baseUrl}/api/salons`, { cache: 'no-store' });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.success ? data.data : [];
+    return await listPublicSalons();
   } catch (error) {
-    console.error('Failed to fetch salons:', error);
+    console.error('Failed to load salons:', error);
     return [];
   }
 }
