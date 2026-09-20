@@ -3,10 +3,10 @@ import { clientIp, limitOrResponse } from '@/lib/rateLimit';
 import { prisma } from '@/lib/prisma';
 import { getCustomerSession } from '@/lib/customerSession';
 import { resolveSubscription } from '@/lib/subscription';
+import { DIRECT_OFFER_TYPES, PERCENT_OFFER_TYPES } from '@/lib/offers';
 import { notifyBooking } from '@/lib/notify';
 import { createAppointmentGuarded, isOutsideHours, isSlotConflict } from '@/lib/availability';
 
-const DIRECTLY_APPLICABLE_OFFER_TYPES = ['PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SERVICE'];
 
 // POST: إنشاء حجز جديد مع التحقق من الخدمات والأسعار
 // حجز الضيف (بدون تسجيل دخول) مدعوم عبر customerName + customerPhone: نبحث
@@ -121,7 +121,7 @@ export async function POST(request: Request) {
       const offer = await prisma.offer.findFirst({ where: { id: offerId, tenantId, isActive: true } });
       const notExpired = offer && (!offer.endsAt || offer.endsAt >= new Date());
 
-      if (!offer || !notExpired || !DIRECTLY_APPLICABLE_OFFER_TYPES.includes(offer.type)) {
+      if (!offer || !notExpired || !DIRECT_OFFER_TYPES.includes(offer.type)) {
         return NextResponse.json({ success: false, error: 'العرض غير صالح' }, { status: 400 });
       }
 
@@ -134,7 +134,19 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: 'هذا العرض لا ينطبق على هذه الخدمة' }, { status: 400 });
       }
 
-      if (offer.type === 'PERCENTAGE' && offer.discountPercent) {
+      if (offer.type === 'FIRST_BOOKING') {
+        // للعميل الجديد فقط: لا حجز سابق غير ملغي لدى هذا الصالون
+        const prior = resolvedCustomerId
+          ? await prisma.appointment.count({
+              where: { tenantId, customerId: resolvedCustomerId, status: { not: 'CANCELLED' } },
+            })
+          : 1;
+        if (prior > 0) {
+          return NextResponse.json({ success: false, error: 'هذا العرض لأول حجز فقط' }, { status: 400 });
+        }
+      }
+
+      if (PERCENT_OFFER_TYPES.includes(offer.type) && offer.discountPercent) {
         finalAmount = Math.max(0, basePrice * (1 - offer.discountPercent / 100));
       } else if (offer.type === 'FIXED_AMOUNT' && offer.discountAmount) {
         finalAmount = Math.max(0, basePrice - Number(offer.discountAmount));

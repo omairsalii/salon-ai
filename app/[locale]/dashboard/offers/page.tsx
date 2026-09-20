@@ -85,7 +85,7 @@ export default function OffersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type,
-          discountPercent: type === 'PERCENTAGE' ? discountPercent : undefined,
+          discountPercent: ['PERCENTAGE', 'FIRST_BOOKING', 'SEASONAL'].includes(type) ? discountPercent : undefined,
           discountAmount: type === 'FIXED_AMOUNT' ? discountAmount : undefined,
           appliesToServiceId: appliesToServiceId || undefined,
           freeServiceId: type === 'FREE_SERVICE' || type === 'BUY_X_GET_Y' ? freeServiceId : undefined,
@@ -162,7 +162,7 @@ export default function OffersPage() {
             </select>
           </div>
 
-          {type === 'PERCENTAGE' && (
+          {['PERCENTAGE', 'FIRST_BOOKING', 'SEASONAL'].includes(type) && (
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1">{t('discountPercent')}</label>
               <input type="number" min={1} max={100} value={discountPercent} onChange={(e) => setDiscountPercent(e.target.value)} required className="w-full px-3 py-2 border rounded-md text-black" />

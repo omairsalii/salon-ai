@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     if ((type === 'FREE_SERVICE' || type === 'BUY_X_GET_Y') && !freeServiceId) {
       return NextResponse.json({ success: false, error: 'حدد الخدمة المجانية' }, { status: 400 });
     }
-    if (type === 'PERCENTAGE' && !discountPercent) {
+    if ((type === 'PERCENTAGE' || type === 'FIRST_BOOKING' || type === 'SEASONAL') && !discountPercent) {
       return NextResponse.json({ success: false, error: 'حدد نسبة الخصم' }, { status: 400 });
     }
     if (type === 'FIXED_AMOUNT' && !discountAmount) {

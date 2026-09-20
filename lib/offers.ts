@@ -17,6 +17,10 @@ export interface OfferLike {
 }
 
 // نص العرض المعروض للعميل — عربي/إنجليزي بدون الحاجة لتحميل next-intl هنا
+// أنواع تُطبَّق فعليًا عند الحجز، وأنواع خصمها نسبة مئوية
+export const DIRECT_OFFER_TYPES = ['PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SERVICE', 'FIRST_BOOKING', 'SEASONAL'];
+export const PERCENT_OFFER_TYPES = ['PERCENTAGE', 'FIRST_BOOKING', 'SEASONAL'];
+
 export function describeOffer(offer: OfferLike, locale: string, currency: string): string {
   const ar = locale === 'ar';
   switch (offer.type) {
@@ -35,8 +39,10 @@ export function describeOffer(offer: OfferLike, locale: string, currency: string
       return ar ? `احصل على ${name} مجانًا` : `Get ${name} for free`;
     }
     case 'FIRST_BOOKING':
+      if (offer.discountPercent) return ar ? `خصم ${offer.discountPercent}% لأول حجز` : `${offer.discountPercent}% off your first booking`;
       return ar ? 'خصم لأول حجز' : 'Discount on your first booking';
     default:
+      if (offer.discountPercent) return ar ? `عرض خاص بمناسبة: خصم ${offer.discountPercent}%` : `Special offer: ${offer.discountPercent}% off`;
       return ar ? 'عرض خاص بمناسبة' : 'Special occasion offer';
   }
 }

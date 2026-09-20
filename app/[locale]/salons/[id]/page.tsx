@@ -3,7 +3,9 @@ import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import SalonMap from '@/components/SalonMap';
 import ServicesList from '@/components/ServicesList';
-import { describeOffer } from '@/lib/offers';
+import { DIRECT_OFFER_TYPES, describeOffer } from '@/lib/offers';
+import { getRatings } from '@/lib/ratings';
+import FavoriteButton from '@/components/FavoriteButton';
 
 export default async function SalonDetailPage({
   params,
@@ -32,6 +34,17 @@ export default async function SalonDetailPage({
 
   const t = await getTranslations('SalonDetail');
 
+  const [ratingMap, reviews] = await Promise.all([
+    getRatings([tenant.id]),
+    prisma.review.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      include: { account: { select: { name: true } } },
+    }),
+  ]);
+  const rating = ratingMap.get(tenant.id);
+
   const serviceRows = services.map((s) => {
     const name = (s.name as Record<string, string> | null) || {};
     return {
@@ -56,7 +69,15 @@ export default async function SalonDetailPage({
     <main className="min-h-screen bg-gray-50 p-6 md:p-12" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <div className="max-w-3xl mx-auto">
         <header className="mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-900 mb-2">{tenant.name}</h1>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+            <h1 className="text-3xl font-extrabold text-gray-900">{tenant.name}</h1>
+            <FavoriteButton tenantId={tenant.id} />
+          </div>
+          {rating && (
+            <p className="text-amber-600 text-sm mb-1">
+              ★ {rating.avg} <span className="text-gray-400">({rating.count})</span>
+            </p>
+          )}
           <p className="text-gray-600">
             {tenant.addressText || tenant.city || (locale === 'ar' ? 'موقع مميز في دول الخليج' : 'Prime GCC Location')}
           </p>
@@ -114,7 +135,7 @@ export default async function SalonDetailPage({
             currency={tenant.currency || 'BHD'}
             depositPercentage={tenant.depositPercentage}
             offers={offers
-              .filter((o) => ['PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SERVICE'].includes(o.type))
+              .filter((o) => DIRECT_OFFER_TYPES.includes(o.type))
               .map((o) => ({
                 id: o.id,
                 type: o.type,
@@ -124,6 +145,28 @@ export default async function SalonDetailPage({
                 freeServiceId: o.freeServiceId,
               }))}
           />
+        </section>
+
+        <section className="mt-10">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">{t('reviews')}</h2>
+          {reviews.length === 0 ? (
+            <p className="text-gray-400 text-sm">{t('noReviews')}</p>
+          ) : (
+            <div className="space-y-3">
+              {reviews.map((r) => (
+                <div key={r.id} className="bg-white rounded-xl border border-gray-100 p-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-gray-900">{r.account.name}</span>
+                    <span className="text-amber-500" dir="ltr">
+                      {'★'.repeat(r.rating)}
+                      <span className="text-gray-300">{'★'.repeat(5 - r.rating)}</span>
+                    </span>
+                  </div>
+                  {r.comment && <p className="text-sm text-gray-600 mt-1">{r.comment}</p>}
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </main>

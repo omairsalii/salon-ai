@@ -99,7 +99,7 @@ export default function BookingForm({
   const finalPrice = useMemo(() => {
     if (!service.basePrice) return null;
     if (!selectedOffer) return service.basePrice;
-    if (selectedOffer.type === 'PERCENTAGE' && selectedOffer.discountPercent) {
+    if (['PERCENTAGE', 'FIRST_BOOKING', 'SEASONAL'].includes(selectedOffer.type) && selectedOffer.discountPercent) {
       return Math.max(0, service.basePrice * (1 - selectedOffer.discountPercent / 100));
     }
     if (selectedOffer.type === 'FIXED_AMOUNT' && selectedOffer.discountAmount) {

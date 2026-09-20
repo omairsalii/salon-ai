@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getRatings } from '@/lib/ratings';
 import { TRIAL_DAYS } from '@/lib/plans';
 import { clientIp, limitOrResponse } from '@/lib/rateLimit';
 import { sendVerificationEmail } from '@/lib/verification';
@@ -83,10 +84,15 @@ export async function GET(request: Request) {
       salons = tenants.map((t) => ({ ...t, hasActiveOffer: activeOfferTenantIds.has(t.id) }));
     }
 
-    return NextResponse.json(
-      { success: true, count: Array.isArray(salons) ? salons.length : 0, data: salons },
-      { status: 200 }
-    );
+    const list = Array.isArray(salons) ? (salons as Array<{ id: string }>) : [];
+    const ratings = await getRatings(list.map((s) => s.id));
+    const withRatings = list.map((s) => ({
+      ...s,
+      rating: ratings.get(s.id)?.avg ?? null,
+      reviewCount: ratings.get(s.id)?.count ?? 0,
+    }));
+
+    return NextResponse.json({ success: true, count: withRatings.length, data: withRatings }, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching salons:', error);
     return NextResponse.json(
@@ -97,8 +103,7 @@ export async function GET(request: Request) {
 }
 
 // تسجيل صالون جديد + إنشاء حساب مالكه، عبر نموذج /[locale]/salons/new.
-// ملاحظة أمنية متبقية: ما فيه تحقق من البريد الإلكتروني بعد (verification) —
-// أي شخص بإيميل صحيح الصيغة يقدر يسجل. هذا قرار مؤجل عن قصد لحين الحاجة له.
+// يُرسل رابط تأكيد البريد بعد التسجيل، والتأكيد غير مفروض للدخول (تنبيه فقط).
 export async function POST(request: Request) {
   try {
     const limited = limitOrResponse(`register-salon:${clientIp(request)}`, 10, 60 * 60 * 1000);

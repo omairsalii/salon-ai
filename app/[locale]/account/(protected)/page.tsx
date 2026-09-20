@@ -1,9 +1,11 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { getCustomerSession } from '@/lib/customerSession';
 import { prisma } from '@/lib/prisma';
 import { describeOffer } from '@/lib/offers';
 import VerifyEmailBanner from '@/components/VerifyEmailBanner';
+import ReviewForm from '@/components/account/ReviewForm';
 import AppointmentActions from '@/components/account/AppointmentActions';
 import LogoutButton from '@/components/account/LogoutButton';
 
@@ -36,6 +38,12 @@ export default async function AccountPage({
   const tenantIds = Array.from(new Set(linkedCustomers.map((c) => c.tenantId)));
   const customerIds = linkedCustomers.map((c) => c.id);
 
+  const favorites = await prisma.favorite.findMany({
+    where: { accountId: session.accountId, tenant: { isPublished: true } },
+    include: { tenant: { select: { name: true } } },
+    orderBy: { createdAt: 'desc' },
+  });
+
   const [appointments, offers, upcoming] = await Promise.all([
     prisma.appointment.findMany({
       where: { customerId: { in: customerIds } },
@@ -44,6 +52,7 @@ export default async function AccountPage({
         tenant: { select: { name: true, cancellationHours: true, timezone: true } },
         service: { select: { name: true } },
         appliedOffer: { include: { appliesToService: true, freeService: true } },
+        review: { select: { rating: true } },
       },
     }),
     tenantIds.length > 0
@@ -117,6 +126,25 @@ export default async function AccountPage({
           )}
         </section>
 
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">{t('favorites')}</h2>
+          {favorites.length === 0 ? (
+            <div className="bg-white p-6 rounded-2xl shadow-sm text-center text-gray-400">{t('noFavorites')}</div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {favorites.map((f) => (
+                <Link
+                  key={f.tenantId}
+                  href={`/${locale}/salons/${f.tenantId}`}
+                  className="bg-white border border-gray-100 rounded-full px-4 py-2 text-sm text-gray-800 hover:border-gray-300"
+                >
+                  ♥ {f.tenant.name}
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
         <section>
           <h2 className="text-xl font-bold text-gray-800 mb-4">{t('history')}</h2>
           {appointments.length === 0 ? (
@@ -153,6 +181,12 @@ export default async function AccountPage({
                       </td>
                       <td className="p-3">{t(`status_${a.status}` as never)}</td>
                       <td className="p-3">
+                        {a.status === 'COMPLETED' &&
+                          (a.review ? (
+                            <span className="text-amber-500" dir="ltr">{'★'.repeat(a.review.rating)}</span>
+                          ) : (
+                            <ReviewForm appointmentId={a.id} />
+                          ))}
                         {a.tenantId && a.serviceId && a.startTime && ['CONFIRMED', 'PENDING_DEPOSIT'].includes(a.status || '') &&
                           isModifiable(a.startTime, a.tenant?.cancellationHours ?? 24) && (
                             <AppointmentActions

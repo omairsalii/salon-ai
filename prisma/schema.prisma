@@ -40,6 +40,8 @@ model Tenant {
   appointments    Appointment[]
   customerPackages CustomerPackage[]
   offers          Offer[]
+  reviews         Review[]
+  favorites       Favorite[]
 
   @@map("tenants")
 }
@@ -149,6 +151,8 @@ model CustomerAccount {
   createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
 
   customers    Customer[]
+  reviews      Review[]
+  favorites    Favorite[]
 
   @@map("customer_accounts")
 }
@@ -214,6 +218,7 @@ model Appointment {
   endTime       DateTime? @map("end_time") @db.Timestamp(6)
   holdExpiresAt DateTime? @map("hold_expires_at") @db.Timestamp(6)
 
+  review        Review?
   appliedOffer  Offer?    @relation(fields: [appliedOfferId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   service       Service?  @relation(fields: [serviceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -241,4 +246,33 @@ model CustomerPackage {
   customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@map("customer_packages")
+}
+// تقييم صالون بعد موعد مكتمل — تقييم واحد لكل موعد
+model Review {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String         @map("tenant_id") @db.Uuid
+  accountId     String         @map("account_id") @db.Uuid
+  appointmentId String         @unique @map("appointment_id") @db.Uuid
+  rating        Int
+  comment       String?
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  account       CustomerAccount @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  appointment   Appointment    @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("reviews")
+}
+
+model Favorite {
+  accountId String          @map("account_id") @db.Uuid
+  tenantId  String          @map("tenant_id") @db.Uuid
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+
+  account   CustomerAccount @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenant    Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([accountId, tenantId])
+  @@map("favorites")
 }

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { getRatings } from '@/lib/ratings';
 import Link from 'next/link';
 import SalonMap from '@/components/SalonMap';
 import SalonGrid from '@/components/SalonGrid';
@@ -38,6 +39,8 @@ export default async function SalonsPage({
     ).map((o) => o.tenantId)
   );
 
+  const ratings = await getRatings(tenants.map((t) => t.id));
+
   // تحويل الصالونات لشكل قابل للتسلسل لتمريرها لمكوّنات العميل
   const mapSalons = tenants.map((t) => ({
     id: t.id,
@@ -56,6 +59,8 @@ export default async function SalonsPage({
     latitude: t.latitude ? Number(t.latitude) : null,
     longitude: t.longitude ? Number(t.longitude) : null,
     hasActiveOffer: activeOfferTenantIds.has(t.id),
+    rating: ratings.get(t.id)?.avg ?? null,
+    reviewCount: ratings.get(t.id)?.count ?? 0,
   }));
 
   return (

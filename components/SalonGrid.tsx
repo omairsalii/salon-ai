@@ -14,6 +14,8 @@ export interface SalonGridItem {
   latitude: number | string | null;
   longitude: number | string | null;
   hasActiveOffer?: boolean;
+  rating?: number | null;
+  reviewCount?: number;
   distanceKm?: number | string | null;
 }
 
@@ -114,6 +116,11 @@ export default function SalonGrid({ locale, salons }: { locale: string; salons: 
                 <p className="text-sm text-gray-500 mb-1">
                   {salon.addressText || salon.city || (locale === 'ar' ? 'موقع مميز في دول الخليج' : 'Prime GCC Location')}
                 </p>
+                {salon.rating ? (
+                  <p className="text-xs text-amber-600 mb-1">
+                    ★ {salon.rating} <span className="text-gray-400">({salon.reviewCount})</span>
+                  </p>
+                ) : null}
                 {distance !== null && (
                   <p className="text-xs text-gray-400 mb-3">
                     📍 {distance.toFixed(1)} {t('distanceKm')}
