@@ -116,7 +116,13 @@ export default async function SalonDetailPage({
       <div className="max-w-3xl mx-auto">
         <header className="mb-8">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-            <h1 className="text-3xl font-extrabold text-gray-900">{tenant.name}</h1>
+            <div className="flex items-center gap-3">
+              {tenant.logoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={tenant.logoUrl} alt={tenant.name} className="h-16 w-16 rounded-2xl object-cover border border-gray-100" />
+              )}
+              <h1 className="text-3xl font-extrabold text-gray-900">{tenant.name}</h1>
+            </div>
             <FavoriteButton tenantId={tenant.id} />
           </div>
           {rating && (

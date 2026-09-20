@@ -59,6 +59,7 @@ export default async function SalonsPage({
     latitude: t.latitude ? Number(t.latitude) : null,
     longitude: t.longitude ? Number(t.longitude) : null,
     hasActiveOffer: activeOfferTenantIds.has(t.id),
+    logoUrl: t.logoUrl,
     rating: ratings.get(t.id)?.avg ?? null,
     reviewCount: ratings.get(t.id)?.count ?? 0,
   }));

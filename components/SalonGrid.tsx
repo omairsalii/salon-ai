@@ -14,6 +14,7 @@ export interface SalonGridItem {
   latitude: number | string | null;
   longitude: number | string | null;
   hasActiveOffer?: boolean;
+  logoUrl?: string | null;
   rating?: number | null;
   reviewCount?: number;
   distanceKm?: number | string | null;
@@ -106,7 +107,13 @@ export default function SalonGrid({ locale, salons }: { locale: string; salons: 
                 className="bg-white rounded-2xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition-shadow"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <h3 className="text-xl font-bold text-gray-900">{salon.name}</h3>
+                  <div className="flex items-center gap-3 min-w-0">
+                    {salon.logoUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={salon.logoUrl} alt="" className="h-11 w-11 shrink-0 rounded-xl object-cover border border-gray-100" />
+                    )}
+                    <h3 className="text-xl font-bold text-gray-900 truncate">{salon.name}</h3>
+                  </div>
                   {salon.hasActiveOffer && (
                     <span className="shrink-0 text-xs font-medium bg-rose-50 text-rose-700 px-2.5 py-1 rounded-full">
                       🏷️ {t('hasOffer')}

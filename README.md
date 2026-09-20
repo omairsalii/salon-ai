@@ -22,6 +22,7 @@ npm run dev
 | `DATABASE_URL` | yes | PostgreSQL (PostGIS مثبّت) |
 | `SESSION_SECRET` | yes | مفتاح توقيع الجلسات الثلاث (owner / admin / customer) |
 | `NEXT_PUBLIC_SITE_URL`, `APP_URL` | prod | الروابط المطلقة (بريد، sitemap، SEO) |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | for logo upload | تخزين الصور على Supabase Storage (المفتاح سرّي، للسيرفر فقط). الحاوية `salon-media` تُنشأ تلقائيًا |
 | `RESEND_API_KEY`, `EMAIL_FROM` | prod | إرسال البريد. بدونهما تُطبع الرسائل في سجل السيرفر |
 
 ## Scripts
@@ -67,4 +68,4 @@ npx prisma generate
 
 ## Not built yet
 
-رفع شعار الصالون ومعرض الصور (يحتاج مزوّد تخزين سحابي)، التسجيل برقم الجوال + رمز SMS (يحتاج مزوّد رسائل)، الدفع الفعلي، دوام يعبر منتصف الليل، Content-Security-Policy.
+معرض صور الصالون (شعار الصالون مبني على Supabase Storage)، التسجيل برقم الجوال + رمز SMS (يحتاج مزوّد رسائل)، الدفع الفعلي، دوام يعبر منتصف الليل، Content-Security-Policy.

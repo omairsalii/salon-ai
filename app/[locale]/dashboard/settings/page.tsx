@@ -2,6 +2,7 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import LogoUploader from '@/components/dashboard/LogoUploader';
 import WeeklyHoursEditor, { initialHours } from '@/components/dashboard/WeeklyHoursEditor';
 import type { WeeklyHours } from '@/lib/schedule';
 
@@ -22,6 +23,7 @@ export default function SettingsPage() {
   const [descriptionAr, setDescriptionAr] = useState('');
   const [descriptionEn, setDescriptionEn] = useState('');
   const [phone, setPhone] = useState('');
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isPublished, setIsPublished] = useState(true);
   const [depositPercentage, setDepositPercentage] = useState('30');
   const [minBookingNoticeHours, setMinBookingNoticeHours] = useState('2');
@@ -42,6 +44,7 @@ export default function SettingsPage() {
         setDescriptionAr(tenant.description?.ar || '');
         setDescriptionEn(tenant.description?.en || '');
         setPhone(tenant.phone || '');
+        setLogoUrl(tenant.logoUrl || null);
         setIsPublished(tenant.isPublished !== false);
         setDepositPercentage(String(tenant.depositPercentage ?? 30));
         setMinBookingNoticeHours(String(tenant.minBookingNoticeHours ?? 2));
@@ -98,6 +101,8 @@ export default function SettingsPage() {
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 max-w-2xl space-y-4">
         {error && <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
         {saved && <div className="p-3 bg-emerald-50 text-emerald-700 rounded text-sm">تم الحفظ بنجاح</div>}
+
+        {!loading && <LogoUploader key={logoUrl ?? 'none'} initialUrl={logoUrl} />}
 
         <div>
           <label className="block text-sm font-medium text-stone-700 mb-1">{t('salonName')}</label>

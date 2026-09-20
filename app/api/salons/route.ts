@@ -31,6 +31,7 @@ export async function GET(request: Request) {
           city,
           subdomain,
           custom_domain AS "customDomain",
+          logo_url AS "logoUrl",
           latitude,
           longitude,
           address_text AS "addressText",

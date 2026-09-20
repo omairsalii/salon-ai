@@ -8,10 +8,12 @@ import { ReactNode, useState } from 'react';
 export default function DashboardShell({
   locale,
   tenantName,
+  logoUrl,
   children,
 }: {
   locale: string;
   tenantName: string;
+  logoUrl?: string | null;
   children: ReactNode;
 }) {
   const t = useTranslations('Dashboard');
@@ -50,7 +52,13 @@ export default function DashboardShell({
           <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             {common('appName')} - {t('title')}
           </span>
-          <p className="text-xs text-stone-500 mt-1 truncate">{tenantName}</p>
+          <div className="flex items-center gap-2 mt-1">
+            {logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt="" className="h-6 w-6 rounded-md object-cover" />
+            )}
+            <p className="text-xs text-stone-500 truncate">{tenantName}</p>
+          </div>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {links.map((link) => (

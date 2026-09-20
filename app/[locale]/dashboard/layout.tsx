@@ -21,7 +21,7 @@ export default async function DashboardLayout({
 
   const tenant = await prisma.tenant.findUnique({
     where: { id: session.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   if (!tenant) {
@@ -29,7 +29,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <DashboardShell locale={locale} tenantName={tenant.name}>
+    <DashboardShell locale={locale} tenantName={tenant.name} logoUrl={tenant.logoUrl}>
       <VerifyEmailBanner audience="owner" />
       {children}
     </DashboardShell>
