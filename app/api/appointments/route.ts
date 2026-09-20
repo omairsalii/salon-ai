@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCustomerSession } from '@/lib/customerSession';
+import { createAppointmentGuarded, isSlotConflict } from '@/lib/availability';
 
 const DIRECTLY_APPLICABLE_OFFER_TYPES = ['PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SERVICE'];
 
@@ -40,8 +41,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Salon not found' }, { status: 404 });
     }
 
+    if (employeeId) {
+      const staff = await prisma.staff.findFirst({ where: { id: employeeId, tenantId, status: 'ACTIVE' } });
+      if (!staff) {
+        return NextResponse.json({ success: false, error: 'الموظف غير متاح' }, { status: 404 });
+      }
+    }
+
     // التحقق من أقل مدة إشعار مسبق قبل الحجز (إعداد يتحكم به صاحب الصالون)
     const startDateTime = new Date(startTime);
+    if (Number.isNaN(startDateTime.getTime())) {
+      return NextResponse.json({ success: false, error: 'Invalid startTime' }, { status: 400 });
+    }
     const minNoticeMs = (tenant.minBookingNoticeHours || 0) * 60 * 60 * 1000;
     if (startDateTime.getTime() < Date.now() + minNoticeMs) {
       return NextResponse.json(
@@ -126,21 +137,19 @@ export async function POST(request: Request) {
     const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60 * 1000);
 
     // إنشاء الحجز الجديد في قاعدة البيانات
-    const newAppointment = await prisma.appointment.create({
-      data: {
-        tenantId,
-        customerId: resolvedCustomerId,
-        employeeId: employeeId || null,
-        serviceId,
-        appliedOfferId,
-        status: depositAmount > 0 ? 'PENDING_DEPOSIT' : 'CONFIRMED',
-        totalAmount: finalAmount,
-        depositAmount: depositAmount,
-        paymentStatus: 'UNPAID',
-        startTime: startDateTime,
-        endTime: endDateTime,
-        holdExpiresAt: new Date(Date.now() + 15 * 60 * 1000), // حجز مؤقت لمدة 15 دقيقة
-      },
+    const newAppointment = await createAppointmentGuarded({
+      tenantId,
+      customerId: resolvedCustomerId,
+      employeeId: employeeId || null,
+      serviceId,
+      appliedOfferId,
+      status: depositAmount > 0 ? 'PENDING_DEPOSIT' : 'CONFIRMED',
+      totalAmount: finalAmount,
+      depositAmount: depositAmount,
+      paymentStatus: 'UNPAID',
+      startTime: startDateTime,
+      endTime: endDateTime,
+      holdExpiresAt: new Date(Date.now() + 15 * 60 * 1000), // حجز مؤقت لمدة 15 دقيقة
     });
 
     return NextResponse.json(
@@ -152,6 +161,12 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error: any) {
+    if (isSlotConflict(error)) {
+      return NextResponse.json(
+        { success: false, error: 'هذا الموظف محجوز في هذا الوقت، اختر وقتًا أو موظفًا آخر' },
+        { status: 409 }
+      );
+    }
     console.error('Error creating appointment:', error);
     return NextResponse.json(
       {

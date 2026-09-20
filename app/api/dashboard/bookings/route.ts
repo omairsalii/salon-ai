@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
+import { createAppointmentGuarded, isSlotConflict } from '@/lib/availability';
 
 export async function GET() {
   const session = await getSession();
@@ -67,8 +68,8 @@ export async function POST(request: Request) {
     const durationMinutes = service.baseDurationMinutes || 60;
     const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60 * 1000);
 
-    const appointment = await prisma.appointment.create({
-      data: {
+    const appointment = await createAppointmentGuarded(
+      {
         tenantId: session.tenantId,
         customerId: customerId || null,
         employeeId: employeeId || null,
@@ -79,11 +80,17 @@ export async function POST(request: Request) {
         startTime: startDateTime,
         endTime: endDateTime,
       },
-      include: { service: true, customer: true, employee: true },
-    });
+      { service: true, customer: true, employee: true }
+    );
 
     return NextResponse.json({ success: true, data: appointment }, { status: 201 });
   } catch (error: any) {
+    if (isSlotConflict(error)) {
+      return NextResponse.json(
+        { success: false, error: 'هذا الموظف لديه حجز آخر في نفس الوقت' },
+        { status: 409 }
+      );
+    }
     console.error('Error creating booking:', error);
     return NextResponse.json(
       { success: false, error: 'فشل إنشاء الحجز', details: error.message },
