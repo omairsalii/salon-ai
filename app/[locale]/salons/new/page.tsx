@@ -61,7 +61,7 @@ export default function NewSalonPage() {
     });
   }, [isMounted]);
 
-  const updateLocation = (newLat: number, newLng: number, icon: any) => {
+  function updateLocation(newLat: number, newLng: number, icon: any) {
     const roundedLat = parseFloat(newLat.toFixed(6));
     const roundedLng = parseFloat(newLng.toFixed(6));
     setLat(roundedLat);
@@ -285,7 +285,7 @@ export default function NewSalonPage() {
               placeholder="https://maps.app.goo.gl/..."
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">ألصق رابط اللوكيشن المُرسل من قوقل ماب، واضغط "استخراج الإحداثيات" لتحديث الخريطة تلقائياً.</p>
+          <p className="text-xs text-gray-500 mt-1">ألصق رابط اللوكيشن المُرسل من قوقل ماب، واضغط &quot;استخراج الإحداثيات&quot; لتحديث الخريطة تلقائياً.</p>
         </div>
 
         <div>
