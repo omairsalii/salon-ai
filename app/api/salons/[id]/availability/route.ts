@@ -9,6 +9,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const serviceId = url.searchParams.get('serviceId');
   const date = url.searchParams.get('date');
   const employeeId = url.searchParams.get('employeeId') || undefined;
+  const excludeAppointmentId = url.searchParams.get('excludeAppointmentId') || undefined;
 
   if (!serviceId || !date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return NextResponse.json({ success: false, error: 'serviceId and date (YYYY-MM-DD) are required' }, { status: 400 });
@@ -28,6 +29,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     date,
     durationMinutes: service.baseDurationMinutes || 60,
     employeeId,
+    excludeAppointmentId,
   });
 
   return NextResponse.json({ success: true, data: { slots, timezone: tenant.timezone } }, { status: 200 });

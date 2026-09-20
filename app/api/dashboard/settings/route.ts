@@ -38,6 +38,7 @@ export async function PATCH(request: Request) {
       isPublished,
       depositPercentage,
       minBookingNoticeHours,
+      cancellationHours,
     } = body;
 
     let workingHoursUpdate = {};
@@ -70,6 +71,9 @@ export async function PATCH(request: Request) {
         ...(isPublished !== undefined ? { isPublished: Boolean(isPublished) } : {}),
         ...(depositPercentage !== undefined
           ? { depositPercentage: Math.max(0, Math.min(100, parseInt(depositPercentage, 10) || 0)) }
+          : {}),
+        ...(cancellationHours !== undefined
+          ? { cancellationHours: Math.max(0, parseInt(cancellationHours, 10) || 0) }
           : {}),
         ...(minBookingNoticeHours !== undefined
           ? { minBookingNoticeHours: Math.max(0, parseInt(minBookingNoticeHours, 10) || 0) }

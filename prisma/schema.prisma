@@ -27,6 +27,7 @@ model Tenant {
   isPublished     Boolean       @default(true) @map("is_published")
   depositPercentage Int         @default(30) @map("deposit_percentage")
   minBookingNoticeHours Int     @default(2) @map("min_booking_notice_hours")
+  cancellationHours Int         @default(24) @map("cancellation_hours")
   createdAt       DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt       DateTime?     @updatedAt @map("updated_at") @db.Timestamp(6)
 

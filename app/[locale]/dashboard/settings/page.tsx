@@ -25,6 +25,7 @@ export default function SettingsPage() {
   const [isPublished, setIsPublished] = useState(true);
   const [depositPercentage, setDepositPercentage] = useState('30');
   const [minBookingNoticeHours, setMinBookingNoticeHours] = useState('2');
+  const [cancellationHours, setCancellationHours] = useState('24');
 
   useEffect(() => {
     (async () => {
@@ -44,6 +45,7 @@ export default function SettingsPage() {
         setIsPublished(tenant.isPublished !== false);
         setDepositPercentage(String(tenant.depositPercentage ?? 30));
         setMinBookingNoticeHours(String(tenant.minBookingNoticeHours ?? 2));
+        setCancellationHours(String(tenant.cancellationHours ?? 24));
       }
       setLoading(false);
     })();
@@ -72,6 +74,7 @@ export default function SettingsPage() {
           isPublished,
           depositPercentage,
           minBookingNoticeHours,
+          cancellationHours,
         }),
       });
       const data = await res.json();
@@ -155,6 +158,11 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-stone-700 mb-1">{t('minBookingNoticeHours')}</label>
             <input type="number" min={0} value={minBookingNoticeHours} onChange={(e) => setMinBookingNoticeHours(e.target.value)} className="w-full px-3 py-2 border rounded-md text-black" />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-1">{t('cancellationHours')}</label>
+          <input type="number" min={0} value={cancellationHours} onChange={(e) => setCancellationHours(e.target.value)} className="w-full px-3 py-2 border rounded-md text-black" />
         </div>
 
         <div className="flex items-start gap-3 p-3 bg-stone-50 rounded-md border border-stone-200">

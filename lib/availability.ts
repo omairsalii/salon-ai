@@ -40,17 +40,19 @@ function staffHours(staff: { workingHours: unknown }, tenant: TenantSchedule): W
   return resolveHours(staff.workingHours ?? tenant.workingHours);
 }
 
-async function hasConflict(
+export async function hasConflict(
   tx: Prisma.TransactionClient,
   tenantId: string,
   employeeId: string,
   start: Date,
-  end: Date
+  end: Date,
+  excludeId?: string
 ) {
   const found = await tx.appointment.findFirst({
     where: {
       tenantId,
       employeeId,
+      ...(excludeId ? { id: { not: excludeId } } : {}),
       startTime: { lt: end },
       endTime: { gt: start },
       AND: [blockingStatusFilter(new Date())],
@@ -108,6 +110,58 @@ export async function createAppointmentGuarded<T extends Prisma.AppointmentInclu
   );
 }
 
+// نقل موعد قائم لوقت جديد بنفس الفحوصات (دوام + تعارض) مع استثناء الحجز نفسه.
+// إذا لم يكن له موظف والصالون فيه موظفون، يُسند تلقائيًا.
+export async function rescheduleAppointmentGuarded(
+  appointmentId: string,
+  newStart: Date,
+  tenant: TenantSchedule
+) {
+  const tz = tenant.timezone || DEFAULT_TIMEZONE;
+
+  return prisma.$transaction(
+    async (tx) => {
+      const appt = await tx.appointment.findUnique({ where: { id: appointmentId }, include: { service: true } });
+      if (!appt || !appt.tenantId) throw new SlotConflictError();
+
+      const duration = appt.service?.baseDurationMinutes || 60;
+      const newEnd = new Date(newStart.getTime() + duration * 60000);
+      let employeeId = appt.employeeId;
+
+      if (employeeId) {
+        const staff = await tx.staff.findFirst({ where: { id: employeeId, tenantId: appt.tenantId } });
+        if (staff && !fitsWorkingHours(newStart, newEnd, tz, staffHours(staff, tenant))) throw new OutsideHoursError();
+        if (await hasConflict(tx, appt.tenantId, employeeId, newStart, newEnd, appt.id)) throw new SlotConflictError();
+      } else {
+        const activeStaff = await tx.staff.findMany({
+          where: { tenantId: appt.tenantId, status: 'ACTIVE' },
+          orderBy: { createdAt: 'asc' },
+        });
+        if (activeStaff.length > 0) {
+          let sawWorking = false;
+          for (const staff of activeStaff) {
+            if (!fitsWorkingHours(newStart, newEnd, tz, staffHours(staff, tenant))) continue;
+            sawWorking = true;
+            if (!(await hasConflict(tx, appt.tenantId, staff.id, newStart, newEnd, appt.id))) {
+              employeeId = staff.id;
+              break;
+            }
+          }
+          if (!employeeId) throw sawWorking ? new SlotConflictError() : new OutsideHoursError();
+        } else if (!fitsWorkingHours(newStart, newEnd, tz, resolveHours(tenant.workingHours))) {
+          throw new OutsideHoursError();
+        }
+      }
+
+      return tx.appointment.update({
+        where: { id: appt.id },
+        data: { startTime: newStart, endTime: newEnd, employeeId },
+      });
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+  );
+}
+
 export function isSlotConflict(error: unknown): boolean {
   if (error instanceof SlotConflictError) return true;
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034';
@@ -124,8 +178,9 @@ export async function computeSlots(params: {
   date: string;
   durationMinutes: number;
   employeeId?: string;
+  excludeAppointmentId?: string; // عند نقل موعد: لا نحسب الحجز نفسه كمشغول
 }): Promise<string[]> {
-  const { tenant, date, durationMinutes, employeeId } = params;
+  const { tenant, date, durationMinutes, employeeId, excludeAppointmentId } = params;
   const tz = tenant.timezone || DEFAULT_TIMEZONE;
   const salonHours = resolveHours(tenant.workingHours);
 
@@ -140,6 +195,7 @@ export async function computeSlots(params: {
     where: {
       tenantId: tenant.id,
       employeeId: { in: staffList.map((s) => s.id) },
+      ...(excludeAppointmentId ? { id: { not: excludeAppointmentId } } : {}),
       startTime: { lt: dayEnd },
       endTime: { gt: dayStart },
       AND: [blockingStatusFilter(new Date())],

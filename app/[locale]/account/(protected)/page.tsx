@@ -4,7 +4,13 @@ import { getCustomerSession } from '@/lib/customerSession';
 import { prisma } from '@/lib/prisma';
 import { describeOffer } from '@/lib/offers';
 import VerifyEmailBanner from '@/components/VerifyEmailBanner';
+import AppointmentActions from '@/components/account/AppointmentActions';
 import LogoutButton from '@/components/account/LogoutButton';
+
+// نافذة الإلغاء/التعديل: قبل الموعد بعدد الساعات الذي حدده الصالون
+function isModifiable(start: Date, cancellationHours: number): boolean {
+  return start.getTime() - Date.now() >= cancellationHours * 3600 * 1000;
+}
 
 function serviceDisplayName(svc: { name: unknown } | null, locale: string): string {
   if (!svc?.name || typeof svc.name !== 'object') return '—';
@@ -35,7 +41,7 @@ export default async function AccountPage({
       where: { customerId: { in: customerIds } },
       orderBy: { startTime: 'desc' },
       include: {
-        tenant: { select: { name: true } },
+        tenant: { select: { name: true, cancellationHours: true, timezone: true } },
         service: { select: { name: true } },
         appliedOffer: { include: { appliesToService: true, freeService: true } },
       },
@@ -127,6 +133,8 @@ export default async function AccountPage({
                     <th className="p-3">{t('date')}</th>
                     <th className="p-3">{t('amountPaid')}</th>
                     <th className="p-3">{t('discount')}</th>
+                    <th className="p-3">{t('status')}</th>
+                    <th className="p-3">{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -142,6 +150,19 @@ export default async function AccountPage({
                         {a.appliedOffer ? describeOffer(a.appliedOffer as any, locale, 'BHD') : (
                           <span className="text-gray-400">{t('noDiscount')}</span>
                         )}
+                      </td>
+                      <td className="p-3">{t(`status_${a.status}` as never)}</td>
+                      <td className="p-3">
+                        {a.tenantId && a.serviceId && a.startTime && ['CONFIRMED', 'PENDING_DEPOSIT'].includes(a.status || '') &&
+                          isModifiable(a.startTime, a.tenant?.cancellationHours ?? 24) && (
+                            <AppointmentActions
+                              appointmentId={a.id}
+                              tenantId={a.tenantId}
+                              serviceId={a.serviceId}
+                              employeeId={a.employeeId}
+                              timezone={a.tenant?.timezone || 'Asia/Bahrain'}
+                            />
+                          )}
                       </td>
                     </tr>
                   ))}

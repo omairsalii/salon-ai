@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
+import { hasConflict } from '@/lib/availability';
+import { notifyBooking } from '@/lib/notify';
 
 const VALID_STATUSES = ['PENDING_DEPOSIT', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
 
@@ -24,11 +26,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ success: false, error: 'حالة غير صحيحة' }, { status: 400 });
     }
 
+    // إعادة تفعيل حجز ملغي يجب ألا تُنشئ تعارضًا مع حجز آخر أُخذ وقته
+    const reactivating = existing.status === 'CANCELLED' && status !== 'CANCELLED';
+    if (reactivating && existing.employeeId && existing.startTime && existing.endTime) {
+      if (await hasConflict(prisma, existing.tenantId!, existing.employeeId, existing.startTime, existing.endTime, existing.id)) {
+        return NextResponse.json(
+          { success: false, error: 'لا يمكن إعادة التفعيل: الموظف لديه حجز آخر في هذا الوقت' },
+          { status: 409 }
+        );
+      }
+    }
+
     const appointment = await prisma.appointment.update({
       where: { id },
       data: { status },
       include: { service: true, customer: true, employee: true },
     });
+
+    if (status === 'CANCELLED' && existing.status !== 'CANCELLED') {
+      void notifyBooking(id, 'cancelled', ['customer']);
+    }
 
     return NextResponse.json({ success: true, data: appointment }, { status: 200 });
   } catch (error: any) {

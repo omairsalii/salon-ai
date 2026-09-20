@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { clientIp, limitOrResponse } from '@/lib/rateLimit';
 import { prisma } from '@/lib/prisma';
 import { getCustomerSession } from '@/lib/customerSession';
+import { notifyBooking } from '@/lib/notify';
 import { createAppointmentGuarded, isOutsideHours, isSlotConflict } from '@/lib/availability';
 
 const DIRECTLY_APPLICABLE_OFFER_TYPES = ['PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SERVICE'];
@@ -156,6 +157,8 @@ export async function POST(request: Request) {
       endTime: endDateTime,
       holdExpiresAt: new Date(Date.now() + 15 * 60 * 1000), // حجز مؤقت لمدة 15 دقيقة
     }, { tenant, enforceHours: true, autoAssign: true });
+
+    void notifyBooking(newAppointment.id, 'created', ['owner', 'customer']);
 
     return NextResponse.json(
       {
