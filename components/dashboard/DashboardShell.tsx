@@ -24,6 +24,7 @@ export default function DashboardShell({
   const links = [
     { href: base, label: t('overview'), icon: '📊' },
     { href: `${base}/bookings`, label: t('appointments'), icon: '📅' },
+    { href: `${base}/calendar`, label: t('calendar'), icon: '🗓️' },
     { href: `${base}/clients`, label: t('clients'), icon: '👥' },
     { href: `${base}/services`, label: t('services'), icon: '💇‍♀️' },
     { href: `${base}/offers`, label: t('offers'), icon: '🏷️' },

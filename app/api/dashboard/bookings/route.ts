@@ -3,14 +3,22 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { createAppointmentGuarded, isSlotConflict } from '@/lib/availability';
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
+  const url = new URL(request.url);
+  const from = url.searchParams.get('from');
+  const to = url.searchParams.get('to');
+  const range =
+    from && to && !Number.isNaN(Date.parse(from)) && !Number.isNaN(Date.parse(to))
+      ? { startTime: { gte: new Date(from), lt: new Date(to) } }
+      : {};
+
   const bookings = await prisma.appointment.findMany({
-    where: { tenantId: session.tenantId },
+    where: { tenantId: session.tenantId, ...range },
     orderBy: { startTime: 'desc' },
     include: { service: true, customer: true, employee: true },
   });

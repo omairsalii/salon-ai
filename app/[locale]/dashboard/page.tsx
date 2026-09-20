@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
+import AnalyticsPanel from '@/components/dashboard/AnalyticsPanel';
 
 const STATUS_STYLES: Record<string, string> = {
   CONFIRMED: 'bg-blue-50 text-blue-700',
@@ -26,6 +27,11 @@ export default async function DashboardOverviewPage({
   startOfToday.setHours(0, 0, 0, 0);
   const endOfToday = new Date(startOfToday);
   endOfToday.setDate(endOfToday.getDate() + 1);
+
+  const tenantInfo = await prisma.tenant.findUnique({
+    where: { id: session.tenantId },
+    select: { timezone: true, currency: true },
+  });
 
   const [todayAppointments, totalCustomers, recentAppointments] = await Promise.all([
     prisma.appointment.findMany({
@@ -95,6 +101,13 @@ export default async function DashboardOverviewPage({
           <h3 className="text-3xl font-extrabold text-stone-900">{totalCustomers}</h3>
         </div>
       </div>
+
+      <AnalyticsPanel
+        tenantId={session.tenantId}
+        timezone={tenantInfo?.timezone ?? null}
+        currency={tenantInfo?.currency || 'BHD'}
+        locale={locale}
+      />
 
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
         <h3 className="text-lg font-bold text-stone-900 mb-4">{t('recentBookings')}</h3>

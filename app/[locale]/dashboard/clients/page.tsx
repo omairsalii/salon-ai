@@ -3,6 +3,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 
 interface ClientRow {
   id: string;
@@ -140,7 +141,9 @@ export default function ClientsPage() {
             <tbody>
               {clients.map((c) => (
                 <tr key={c.id} className="border-b border-stone-100">
-                  <td className="p-3 font-medium text-stone-900">{c.name}</td>
+                  <td className="p-3 font-medium text-stone-900">
+                    <Link href={`/${locale}/dashboard/clients/${c.id}`} className="hover:text-purple-700 hover:underline">{c.name}</Link>
+                  </td>
                   <td className="p-3" dir="ltr">{c.phone || '—'}</td>
                   <td className="p-3">
                     <span className="bg-purple-50 text-purple-700 text-xs px-2 py-1 rounded-full font-medium">
