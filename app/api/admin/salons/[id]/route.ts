@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminSession';
+import { logAdminAction } from '@/lib/audit';
 import { isPaidPlan } from '@/lib/plans';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -82,6 +83,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       },
     });
 
+    await logAdminAction(guard.session, {
+      action: 'SALON_UPDATE',
+      targetType: 'SALON',
+      targetId: id,
+      targetLabel: tenant.name,
+      details: Object.fromEntries(Object.entries(body).filter(([k]) => k !== 'descriptionAr' && k !== 'descriptionEn')),
+    });
+
     return NextResponse.json({ success: true, data: tenant }, { status: 200 });
   } catch (error: any) {
     console.error('Admin error updating tenant:', error);
@@ -90,4 +99,35 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       { status: 500 }
     );
   }
+}
+
+// حذف صالون نهائيًا مع كل بياناته (يتتالى الحذف على الخدمات والحجوزات والعملاء…).
+// حماية: يجب إرسال اسم الصالون الحالي حرفيًا في confirmName، ويُسجَّل الحذف في سجل التدقيق.
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const guard = await requireAdmin();
+  if ('response' in guard) return guard.response;
+
+  const { id } = await params;
+  const body = await request.json().catch(() => ({}));
+
+  const tenant = await prisma.tenant.findUnique({
+    where: { id },
+    include: { owner: { select: { email: true } }, _count: { select: { appointments: true, customers: true } } },
+  });
+  if (!tenant) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
+
+  if (typeof body.confirmName !== 'string' || body.confirmName.trim() !== tenant.name.trim()) {
+    return NextResponse.json({ success: false, error: 'اسم الصالون غير مطابق، لم يتم الحذف' }, { status: 400 });
+  }
+
+  await logAdminAction(guard.session, {
+    action: 'SALON_DELETE',
+    targetType: 'SALON',
+    targetId: id,
+    targetLabel: tenant.name,
+    details: { ownerEmail: tenant.owner?.email, appointments: tenant._count.appointments, customers: tenant._count.customers },
+  });
+  await prisma.tenant.delete({ where: { id } });
+
+  return NextResponse.json({ success: true });
 }

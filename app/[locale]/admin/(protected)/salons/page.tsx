@@ -24,6 +24,9 @@ export default function AdminSalonsPage() {
   const [tenants, setTenants] = useState<TenantRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<TenantRow | null>(null);
+  const [confirmName, setConfirmName] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -36,6 +39,22 @@ export default function AdminSalonsPage() {
   useEffect(() => {
     load();
   }, []);
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    const res = await fetch(`/api/admin/salons/${deleting.id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmName }),
+    });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setDeleteError(d.error || 'Failed');
+      return;
+    }
+    setDeleting(null);
+    await load();
+  };
 
   const patchTenant = async (id: string, patch: Record<string, unknown>) => {
     await fetch(`/api/admin/salons/${id}`, {
@@ -118,9 +137,14 @@ export default function AdminSalonsPage() {
                     {tenant.createdAt ? new Date(tenant.createdAt).toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US') : '—'}
                   </td>
                   <td className="p-3">
-                    <Link href={`/${locale}/admin/salons/${tenant.id}`} className="text-slate-700 hover:underline">
-                      {t('editSalon')}
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      <Link href={`/${locale}/admin/salons/${tenant.id}`} className="text-slate-700 hover:underline">
+                        {t('editSalon')}
+                      </Link>
+                      <button onClick={() => { setDeleting(tenant); setConfirmName(''); setDeleteError(''); }} className="text-red-600 hover:underline">
+                        {t('deleteSalon')}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -128,6 +152,31 @@ export default function AdminSalonsPage() {
           </table>
         )}
       </div>
+
+      {deleting && (
+        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 max-w-xl">
+          <p className="text-sm text-red-900 mb-1 font-semibold">{deleting.name}</p>
+          <p className="text-sm text-red-800 mb-3">{t('deleteWarning')}</p>
+          {deleteError && <p className="text-sm text-red-700 mb-2">{deleteError}</p>}
+          <input
+            value={confirmName}
+            onChange={(e) => setConfirmName(e.target.value)}
+            className="w-full px-3 py-2 border rounded-md text-black mb-3"
+          />
+          <div className="flex gap-2">
+            <button
+              disabled={confirmName.trim() !== deleting.name.trim()}
+              onClick={confirmDelete}
+              className="bg-red-600 text-white px-4 py-2 rounded-md text-sm disabled:opacity-40"
+            >
+              {t('confirmDelete')}
+            </button>
+            <button onClick={() => setDeleting(null)} className="bg-white text-slate-700 px-4 py-2 rounded-md text-sm border">
+              {t('back')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

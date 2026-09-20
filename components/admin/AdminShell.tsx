@@ -25,6 +25,7 @@ export default function AdminShell({
     { href: base, label: t('overview'), icon: '📊' },
     { href: `${base}/salons`, label: t('salons'), icon: '🏢' },
     { href: `${base}/owners`, label: t('owners'), icon: '🧑‍💼' },
+    { href: `${base}/audit`, label: t('audit'), icon: '🧾' },
   ];
 
   const isActive = (href: string) => pathname === href;
