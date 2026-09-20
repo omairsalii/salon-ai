@@ -66,6 +66,20 @@ export async function GET(request: Request) {
         where: { isPublished: true, ...(city ? { city } : {}) },
         take: 20,
         orderBy: { createdAt: 'desc' },
+        // حقول عامة فقط: لا نكشف الباقة ولا تواريخ التجربة ولا إعدادات داخلية
+        select: {
+          id: true,
+          name: true,
+          city: true,
+          subdomain: true,
+          customDomain: true,
+          logoUrl: true,
+          latitude: true,
+          longitude: true,
+          addressText: true,
+          timezone: true,
+          currency: true,
+        },
       });
 
       const activeOfferTenantIds = new Set(
