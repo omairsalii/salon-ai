@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // تطبيق الشطرنج مستقل (HTML/JS خام + مكتبات جاهزة) وليس جزءاً من تطبيق Next.
+    "chess-app/**",
   ]),
   {
     // Two rules produce hundreds of stylistic hits on the existing
