@@ -57,7 +57,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Error creating staff:', error);
     return NextResponse.json(
-      { success: false, error: 'فشل إضافة الموظف', details: error.message },
+      { success: false, error: 'فشل إضافة الموظف' },
       { status: 500 }
     );
   }

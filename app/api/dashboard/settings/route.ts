@@ -85,7 +85,7 @@ export async function PATCH(request: Request) {
   } catch (error: any) {
     console.error('Error updating settings:', error);
     return NextResponse.json(
-      { success: false, error: 'فشل تحديث الإعدادات', details: error.message },
+      { success: false, error: 'فشل تحديث الإعدادات' },
       { status: 500 }
     );
   }

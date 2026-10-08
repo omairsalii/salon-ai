@@ -34,7 +34,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   } catch (error: any) {
     console.error('Error updating customer:', error);
     return NextResponse.json(
-      { success: false, error: 'فشل تحديث بيانات العميل', details: error.message },
+      { success: false, error: 'فشل تحديث بيانات العميل' },
       { status: 500 }
     );
   }

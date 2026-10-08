@@ -56,6 +56,12 @@ export default function SalonMap({ salons }: { salons: Salon[] }) {
 
       const clusterGroup = (L as any).markerClusterGroup();
 
+      // تهريب HTML: اسم/مدينة الصالون يتحكم بهما المالك، ويُحقنان في نص HTML
+      // داخل bindPopup — بدون تهريب يمكن تخزين <img onerror=...> لتنفيذ سكربت
+      // في متصفح أي زائر يفتح الخريطة (XSS مخزّن).
+      const esc = (s: string) =>
+        s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
       const bounds: [number, number][] = [];
       salons.forEach((salon) => {
         if (salon.lat && salon.lng) {
@@ -65,7 +71,7 @@ export default function SalonMap({ salons }: { salons: Salon[] }) {
             : '';
           L.marker([salon.lat, salon.lng], { icon: customIcon })
             .bindPopup(
-              `<b>${salon.name}</b><br>المدينة: ${salon.city || '—'}${distanceLine}` +
+              `<b>${esc(salon.name)}</b><br>المدينة: ${salon.city ? esc(salon.city) : '—'}${distanceLine}` +
               `<br><a href="${googleMapsUrl(salon.lat, salon.lng)}" target="_blank" rel="noopener noreferrer">فتح في خرائط قوقل ↗</a>`
             )
             .addTo(clusterGroup);

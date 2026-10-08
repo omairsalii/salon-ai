@@ -53,7 +53,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   } catch (error: any) {
     console.error('Error updating staff:', error);
     return NextResponse.json(
-      { success: false, error: 'فشل تحديث بيانات الموظف', details: error.message },
+      { success: false, error: 'فشل تحديث بيانات الموظف' },
       { status: 500 }
     );
   }

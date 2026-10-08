@@ -1,18 +1,11 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { getSecretKey } from '@/lib/sessionSecret';
 import { NextResponse } from 'next/server';
 
 const COOKIE_NAME = 'salon_admin_session';
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 يوم
-
-function getSecretKey() {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) {
-    throw new Error('SESSION_SECRET is not configured');
-  }
-  return new TextEncoder().encode(secret);
-}
 
 export interface AdminSessionPayload {
   adminId: string;

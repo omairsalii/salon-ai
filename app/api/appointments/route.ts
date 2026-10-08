@@ -203,7 +203,6 @@ export async function POST(request: Request) {
       {
         success: false,
         error: 'Failed to create appointment',
-        details: error.message,
       },
       { status: 500 }
     );

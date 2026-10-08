@@ -51,7 +51,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   } catch (error: any) {
     console.error('Error updating booking:', error);
     return NextResponse.json(
-      { success: false, error: 'فشل تحديث الحجز', details: error.message },
+      { success: false, error: 'فشل تحديث الحجز' },
       { status: 500 }
     );
   }

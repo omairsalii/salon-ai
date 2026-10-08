@@ -111,7 +111,7 @@ export async function GET(request: Request) {
   } catch (error: any) {
     console.error('Error fetching salons:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch salons', details: error.message },
+      { success: false, error: 'Failed to fetch salons' },
       { status: 500 }
     );
   }
@@ -192,7 +192,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Error creating salon:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create salon', details: error.message },
+      { success: false, error: 'Failed to create salon' },
       { status: 500 }
     );
   }

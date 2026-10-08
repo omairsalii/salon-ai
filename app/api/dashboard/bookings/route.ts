@@ -109,7 +109,7 @@ export async function POST(request: Request) {
     }
     console.error('Error creating booking:', error);
     return NextResponse.json(
-      { success: false, error: 'فشل إنشاء الحجز', details: error.message },
+      { success: false, error: 'فشل إنشاء الحجز' },
       { status: 500 }
     );
   }

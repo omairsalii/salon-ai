@@ -37,7 +37,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   } catch (error: any) {
     console.error('Error updating service:', error);
     return NextResponse.json(
-      { success: false, error: 'فشل تحديث الخدمة', details: error.message },
+      { success: false, error: 'فشل تحديث الخدمة' },
       { status: 500 }
     );
   }
